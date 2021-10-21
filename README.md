@@ -18,15 +18,11 @@ functions to assist in plotting with different styles commonly used at RPI.
 File structure being:
 
 + nuctools
-   - build/
-   - dist/
    - docs/
    - nuctools/
-   - nuctools.egg-info/
    - tests/
-   - candidacy.mplstyle
-   - mysty.mplstyle
    - README.md
+   - LICENSE.md
    - setup.py
 
 Open a terminal in the top nuctools folder, and execute (I highly recommend an Anaconda installation):
