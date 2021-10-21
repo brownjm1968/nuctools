@@ -1,0 +1,34 @@
+---
+code_id: 66026
+open_source: true
+repository_link: "https://github.com/brownjm1968/nuctools"
+accessibility: "OS"
+software_type: "S"
+developers:
+- email: "brownjm@ornl.gov"
+  orcid: "0000-0002-0769-4100"
+  first_name: "Jesse"
+  last_name: "Brown"
+  middle_name: ""
+  affiliations: []
+contributors: []
+sponsoring_organizations: []
+contributing_organizations: []
+research_organizations: []
+related_identifiers: []
+award_dois: []
+software_title: "nuctools"
+doi: "10.11578/dc.20211021.4"
+description: "Nuctools is a python package designed to provide tools for analysis\
+  \ of nuclear interaction data."
+programming_languages:
+- "Python"
+country_of_origin: "United States"
+licenses:
+- "BSD 3-clause \"New\" or \"Revised\" License"
+date_record_added: "2021-10-21"
+date_record_updated: "2021-10-21"
+links:
+- rel: "citation"
+  href: "https://www.osti.gov/doecode/biblio/66026"
+is_migration: false
