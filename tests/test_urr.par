@@ -1,0 +1,105 @@
+Covariance matrix from old run is used  
+Output file from SAMMY/FITACS run       
+                                        
+                                        
+----------------------------------------
+Iterations     =  2
+Tolerance      =  0.00000500
+Atomic Weight in amu  =  180.947996
+Radius in F           =    7.80000000
+ 
+-----
+Elastic and Inelastic States (with energy in eV)
+       0.0       3.5       1.0
+    6237.0       4.5      -1.0
+  136262.0       4.5       1.0
+  158554.0       5.5      -1.0
+  301622.0       5.5       1.0
+  337540.0       6.5      -1.0
+  482168.0       2.5       1.0
+  495184.0       6.5       1.0
+  542510.0       7.5      -1.0
+  590060.0       3.5       1.0
+  615190.0       0.5       1.0
+  618990.0       1.5       1.0
+  716659.0       7.5       1.0
+  772970.0       8.5      -1.0
+  892900.0       5.5       1.0
+  965000.0       8.5       1.0
+  994200.0       2.5      -1.0
+ 1022600.0       4.5      -1.0
+ 1028000.0       9.5      -1.0
+ 1085600.0       6.5       1.0
+ 1163600.0       6.5      -1.0
+ 1205700.0       1.5       1.0
+ 1239470.0       9.5       1.0
+ 1278100.0       2.5       1.0
+ 1304800.0       7.5       1.0
+ 1307110.0      10.5      -1.0
+ 
+                                        
+Binding Energy in MeV =    7.57680000
+Pairing Energy in MeV =    0.73000000
+ 
+-----
+Streng    Del_S        Distnt   Del_D   Gamma width Del_g      Bethed
+0.000157530.00000313-0.0065603 0.0009997 0.0629051 0.0017586    4.1700
+0.000073080.00002404 0.0000197 0.0100000 0.0692753 0.0112199
+0.000230350.00003005 0.0000002 0.0100000 0.0629051 0.0000000
+ 
+-----
+Fission Width   Fnu    Ethr        Wthr    del_F_W         J    L
+ 
+-----
+Minimum energy in eV =     2000.000000    
+Energy Maximum in eV =     10000.00000    
+                                        
+Binding Energy in MeV =    7.57680000
+Pairing Energy in MeV =    0.73000000
+ 
+-----
+Streng    Del_S        Distnt   Del_D   Gamma width Del_g      Bethed
+0.000163610.00000559-0.0065196 0.0009991 0.0651041 0.0027096    4.1700
+0.000064000.00001313 0.0000600 0.0099997 0.0705997 0.0109313
+0.000231320.00003002 0.0000004 0.0100000 0.0651041 0.0000000
+ 
+-----
+Fission Width   Fnu    Ethr        Wthr    del_F_W         J    L
+ 
+-----
+Minimum energy in eV =     10000.00000    
+Energy Maximum in eV =     45000.00000    
+                                        
+Binding Energy in MeV =    7.57680000
+Pairing Energy in MeV =    0.73000000
+ 
+-----
+Streng    Del_S        Distnt   Del_D   Gamma width Del_g      Bethed
+0.000191040.00001031-0.0066895 0.0009987 0.0569646 0.0051531    4.1700
+0.000068230.00001808-0.0006987 0.0099972 0.0574557 0.0078683
+0.000215680.00002653-0.0001183 0.0099997 0.0569646 0.0000000
+ 
+-----
+Fission Width   Fnu    Ethr        Wthr    del_F_W         J    L
+ 
+-----
+Minimum energy in eV =     45000.00000    
+Energy Maximum in eV =     120000.0000    
+                                        
+End of resonance parameter description
+                                        
+Earlier Normalizations
+ 1 2 3 4 5
+ 
+#Normalizations -- including from earlier runs
+# for data set number  1
+#capture     1.000000  0.000000  0.000000  0.000000  0.000000  0.000000
+# for data set number  2
+#capture     1.000000  0.000000  0.000000  0.000000  0.000000  0.000000
+# for data set number  3
+#total       1.000000  0.000000  0.000000  0.000000  0.000000  0.000000
+# for data set number  4
+#total       1.000000  0.000000  0.000000  0.000000  0.000000  0.000000
+# for data set number  5
+#total       1.000000  0.000000  0.000000  0.000000  0.000000  0.000000
+#

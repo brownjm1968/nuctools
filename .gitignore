@@ -1,0 +1,17 @@
+# Compiled python modules.
+*.pyc
+
+# Setuptools distribution folder.
+/dist/
+
+# Python egg metadata, regenerated from source files by setuptools.
+/*.egg-info
+
+# _build folder for the documentation
+/docs/_build/
+
+# the desktop services file
+*.DS_Store
+
+# the hdf5 file in tests
+*.h5

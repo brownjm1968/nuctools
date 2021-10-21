@@ -1,0 +1,4 @@
+Energy[keV] Av.Tot.xs[b] dAv.Tot.xs[b] Av.Cap.xs[b] dAv.Cap.xs[b] SSCor.Fac.[] dSSCor.Fac.[%] trans[] dtrans[] thick[at/b] samp_type
+      0.500   3.745E+01 6.186E-01 1.477E+01 2.323E-01 1.0000E+00 1.0000E-01 7.042E-01 2.103E-03  0.1000000 trans
+      0.750   3.182E+01 4.133E-01 1.119E+01 1.647E-01 1.0000E+00 1.0000E-01 7.077E-01 2.104E-03  0.1000000 trans
+      1.000   2.818E+01 3.854E-01 8.869E+00 1.302E-01 1.0000E+00 1.0000E-01 7.148E-01 2.077E-03  0.1000000 trans
