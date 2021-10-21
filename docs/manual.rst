@@ -528,9 +528,12 @@ is an unresolved bug in the code.
 SESH and SAMMY executables
 --------------------------
 
-RSICC can be contacted to obtain the SAMMY program. While I am not aware of a public source for 
-SESH, the RPI Linac researchers are attempting to document, maintain, and improve a version of
-the SESH program.
+The ``sammy`` program can be obtained from the `ORNL sammy website <https://code.ornl.gov/RNSD/SAMMY>`_.
+This open-source ``sammy`` program requires SCALE file to compile until the open-source version of 
+AMPX is available. The ``sesh`` program can be obtained from
+ `Jesses GitHub page <https://github.com/brownjm1968/sesh>`_. ``sesh`` is a stand-alone Fortran code
+ and does not require any supporting software. 
+ 
 
 
 
