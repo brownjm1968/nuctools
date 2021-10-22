@@ -27,41 +27,54 @@ File structure being:
 
 Open a terminal in the top nuctools folder, and execute (I highly recommend an Anaconda installation):
 
+```bash
 python setup.py install
+```
 
 --- To Document -------------
 
 Make sure you have numpydoc and sphinx installed, with anaconda installer:
 
+```bash
 conda install numpydoc
 conda install sphinx
+```
 
 At the sphinx website http://www.sphinx-doc.org/en/master/usage/quickstart.html,
 there is a brief walkthrough for first time sphinx users. This is a good place 
 find info on sphinx, however you shouldn't have to create the documentation, it
 should be good to go when the nuctools is downloaded. The sphinx-quickstart will
 write a "conf.py" for you, but you should have the properly designed conf.py 
-already.
+already. To use the theme I've used for the docs, you need to run 
+`pip install sphinx-rtd-theme`.
 
-In terminal navigate to the top nuctools folder and type:
+In the terminal navigate to the top nuctools folder and type:
 
+```bash
 sphinx-apidoc --force -o docs/ nuctools/
+```
 
 where "docs/" is the output directory and "nuctools/" is where the documented
 modules live. Then navigate inside the terminal to the "docs/" folder where you
 just generated .rst files and type:
 
+```bash
 make html
+```
 
 --- To Test -----------------
 
 Make sure you have pytest, with anaconda:
 
+```bash
 conda install pytest
+```
 
 Then inside the top nuctools folder type:
 
+```bash
 pytest
+```
 
 Pytest should go into the "tests/" folder and find python files that start
 with "test".
