@@ -3,7 +3,7 @@
 
 # You can set these variables from the command line.
 SPHINXOPTS    =
-SPHINXBUILD   = /usr/local/Caskroom/miniconda/base/bin/sphinx-build
+SPHINXBUILD   = sphinx-build
 SPHINXPROJ    = nuctools
 SOURCEDIR     = .
 BUILDDIR      = _build
