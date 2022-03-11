@@ -1,7 +1,9 @@
 
 import numpy as np
 
-__all__ = ['read_3col_pendf','write_pendf_xs']
+__all__ = ['read_3col_pendf','write_pendf_xs',"endf_float_str",
+           "update_file2","setupdict","update_pardict"]
+
 
 def read_3col_pendf(file,start,finish):
     """
@@ -186,6 +188,170 @@ def write_pendf_xs(filename,energy,cs,mat_num,file_num,reaction_num):
                 extra_space = " "*spaces_per_gap*how_many_gaps
                 f.write(extra_space+"{:d} {:d}  {:d}\n".format(mat_num,file_num,reaction_num))
 
+
+def endf_float_str(value):
+    """
+    Return the ENDF format string of a floating point number
+
+    Parameters
+    ----------
+    value : float
+        A single floating point value
+
+    Returns
+    -------
+    valstring : str
+        An ENDF format string of input par `value`
+    """
+    if(abs(value) < 1e-9 or abs(value) > 9.999e9):
+        raise ValueError("value is too small or too big")
+    valstring = "{:>13.6e}".format(value).replace('e','').replace('+0','+').replace('-0','-')
+    # with AMPX written files we use "-0" instead of "+0" for some reason
+    if( '+0' in valstring ):
+        valstring = valstring.replace('+0','-0')
+    return valstring
+
+def update_file2(infile,outfile,energy_dict,mat):
+    """
+    Replace the res's in the infile with new values
+    
+    note: resonance must have unique energy
+
+    Parameters
+    ----------
+    infile : str
+        A file that includes ENDF-format File 2. This is the base 
+        file that the outfile will match except updated values
+    outfile : str
+        File written from `infile` and updated resonance values
+        from `energy_dict`
+    energy_dict : dict
+        A dictionary that uses keys based on the energies that can
+        be identified **in the base file** `infile`
+    mat : int
+        The unique ENDF format MAT id
+
+    Returns
+    -------
+    None : None
+        Write a new file to `outfile`
+    """
+
+    with open(infile,'r+') as f:
+        with open(outfile,'w+') as of:
+            matfile = "{} {}".format(mat,2151)
+            for line in f:
+                #if(we're in file 2: res's)
+                if(matfile in line):
+                    for ekey in energy_dict:
+                        #if( we find the res )
+                        if ekey in line:
+                            linelist = list(line)
+                            for i,channel_pair in enumerate(energy_dict[ekey]):
+                                channel_number = channel_pair[0]
+                                channel_value = channel_pair[1]
+                                start = 11*channel_number
+                                end = 11+start
+                                linelist[start:end] = endf_float_str(channel_value)
+                            line = "".join(linelist)
+                of.write(line)
+
+def setupdict(parfile):
+    """
+    Set up a dictionary of varied parameters
+
+    Only varied parameters are included in the dict
+    
+    Parameters
+    ----------
+    parfile : str
+        The path to a par file that was used to run a SAMMY-like
+        operation (normal, MC, etc.).
+
+    Returns
+    -------
+    pardict : dict
+        A dictionary with keys of res energies. Varied pars are
+        added to a list for the appropriate res energy
+
+    Notes
+    -----
+    ** Must match exact E-values of ENDF file that dict will be used to update **
+
+    """
+    pardict = {}
+    with open(parfile,'r+') as f:
+        for line in f:
+            flags = line[56:65].split(' ')
+            try:
+                flags = [int(f) for f in flags]
+            except:
+                continue
+            # if we found res pars
+            if( all(flags) <= 3 ):
+                # if any varied pars
+                if( any(flags) > 0 ):
+                    # energies are dict keys
+                    estring = endf_float_str(float(line[0:11]))
+                    pardict[estring] = []
+                    pars = [float(line[0+11*i:11+11*i]) for i in range(len(flags))]
+                    for i,flag in enumerate(flags):
+                        if( flag > 0 ):
+                            pardict[estring].append((i,pars[i]))
+    return pardict
+
+def update_pardict(pardict,mcpars):
+    """
+    Update the parameter dict using a pandas Series
+    of values taken from a MC run 
+
+    Parameters
+    ----------
+    pardict : dict
+        A dict with keys of base res energies and values
+        of varied parameters from a SAMMY operation
+    mcpars : Series
+        A Pandas Series that has pre-set key names from
+        a MC SAMMY run (fitAPI)
+
+    Returns
+    -------
+    none : None
+        No return, only updates input parameter `pardict`
+
+    """
+    # figure out which pandas key matches dict keys
+    colnames = mcpars.keys().tolist()
+    keycounter = 0 # where in pardict key are we?
+    prevnamenum = 0
+    # run over MC names
+    for i,name in enumerate(colnames):
+        namenum = float(name.split("_")[1])
+        if( namenum!= prevnamenum ):
+            keycounter = 0
+            prevnamenum = namenum
+        for key in pardict:
+            # get key-energy to see if it matches MC name
+            mult = 1
+            tempkey=key
+            if key[0]=="-":
+                tempkey = key[1:len(key)]
+                mult = -1
+            keynum = mult*float(tempkey.replace('-','e-').replace('+','e+'))
+            percdiff = abs((namenum-keynum)/((namenum+keynum)/2))*100
+            # found a matching res
+            if( percdiff < 0.001 ):
+                parname = name.split('_')[0]
+                if parname == "Energy":
+                    parInd = 0
+                elif parname == "gamma":
+                    parInd = 1
+                elif parname == "IncChan":
+                    parInd = 2
+                else:
+                    raise ValueError("par type: {} is not implemented".format(parname))
+                pardict[key][keycounter] = (parInd,mcpars[name])
+                keycounter+=1
 
 
 
