@@ -28,7 +28,7 @@ File structure being:
 Open a terminal in the top nuctools folder, and execute (I highly recommend an Anaconda installation):
 
 ```bash
-python setup.py install
+python -m pip install .
 ```
 
 --- To Document -------------
@@ -68,6 +68,12 @@ Make sure you have pytest, with anaconda:
 
 ```bash
 conda install pytest
+```
+
+or with `pip`:
+
+```bash
+pip install pytest
 ```
 
 Then inside the top nuctools folder type:
