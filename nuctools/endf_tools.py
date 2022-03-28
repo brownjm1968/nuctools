@@ -2,7 +2,7 @@
 import numpy as np
 
 __all__ = ['read_3col_pendf','write_pendf_xs',"endf_float_str",
-           "update_file2","setupdict","update_pardict"]
+           "update_file2","setupdict","update_pardict","strip_line_num"]
 
 
 def read_3col_pendf(file,start,finish):
@@ -352,6 +352,26 @@ def update_pardict(pardict,mcpars):
                     raise ValueError("par type: {} is not implemented".format(parname))
                 pardict[key][keycounter] = (parInd,mcpars[name])
                 keycounter+=1
+
+def strip_line_num(inpfile,outfile):
+    """
+    Strip out the line numbers in an ENDF file, which occur after
+    column number 75
+
+    Parameters
+    ----------
+    inpfile : str
+        The path and name of the input file
+    outfile : str
+        The path and name of the output file that will have line
+        numbers stripped out
+    """
+    with open(inpfile,"r+") as f:
+        inplines = f.readlines()
+    with open(outfile,"w+") as f:
+        for line in inplines:
+            line = line[0:75] + '\n'
+            f.write(line)
 
 
 

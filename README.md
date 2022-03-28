@@ -25,7 +25,7 @@ File structure being:
    - LICENSE.md
    - setup.py
 
-Open a terminal in the top nuctools folder, and execute (I highly recommend an Anaconda installation):
+Open a terminal in the top nuctools folder, and execute (I recommend a brew `||` Anaconda installation):
 
 ```bash
 python -m pip install .
