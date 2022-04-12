@@ -25,7 +25,7 @@ File structure being:
    - LICENSE.md
    - setup.py
 
-Open a terminal in the top nuctools folder, and execute (I recommend a brew `||` Anaconda installation):
+Open a terminal in the top nuctools folder, and execute (I recommend a brew `||` Anaconda installation[2]):
 
 ```bash
 python -m pip install .
@@ -33,11 +33,11 @@ python -m pip install .
 
 --- To Document -------------
 
-Make sure you have numpydoc and sphinx installed, with anaconda installer:
+Make sure you have numpydoc and sphinx installed, with `pip` installer:
 
 ```bash
-conda install numpydoc
-conda install sphinx
+python -m pip install numpydoc
+python -m pip install sphinx
 ```
 
 At the sphinx website http://www.sphinx-doc.org/en/master/usage/quickstart.html,
@@ -46,7 +46,7 @@ find info on sphinx, however you shouldn't have to create the documentation, it
 should be good to go when the nuctools is downloaded. The sphinx-quickstart will
 write a "conf.py" for you, but you should have the properly designed conf.py 
 already. To use the theme I've used for the docs, you need to run 
-`pip install sphinx-rtd-theme`.
+`python -m pip install sphinx-rtd-theme`.
 
 In the terminal navigate to the top nuctools folder and type:
 
@@ -73,7 +73,7 @@ conda install pytest
 or with `pip`:
 
 ```bash
-pip install pytest
+python -m pip install pytest
 ```
 
 Then inside the top nuctools folder type:
@@ -86,4 +86,6 @@ Pytest should go into the "tests/" folder and find python files that start
 with "test".
 
 
-1. Danon, Yaron. "Design and Construction of the RPI Enhanced Thermal Neutron Target and Thermal Cross Section Measurements of Rare Earth Isotopes.", Doctoral Thesis, (1993).
+[1]: Danon, Yaron. "Design and Construction of the RPI Enhanced Thermal Neutron Target and Thermal Cross Section Measurements of Rare Earth Isotopes.", Doctoral Thesis, RPI, (1993).
+[2]: Note: That I'm giving pip installation commands, if you want anaconda you may have to modify
+
