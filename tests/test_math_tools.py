@@ -86,5 +86,31 @@ def test_prop_err_mean():
 
     assert d_avg_x == answer
 
+def test_flat_triang_to_full():
 
+    gold1 = np.array([[1,3,5],
+                      [3,4,9],
+                      [5,9,2]])
+    gold2 = np.array([[1,3,5,7],
+                      [3,4,9,6],
+                      [5,9,2,3],
+                      [7,6,3,4]])
+    gold3 = np.array([[ 1, 2, 3, 4, 5, 6, 7, 8, 9,10],
+                      [ 2,11,12,13,14,15,16,17,18,19],
+                      [ 3,12,20,21,22,23,24,25,26,27],
+                      [ 4,13,21,28,29,30,31,32,33,34],
+                      [ 5,14,22,29,35,36,37,38,39,40],
+                      [ 6,15,23,30,36,41,42,43,44,45],
+                      [ 7,16,24,31,37,42,46,47,48,49],
+                      [ 8,17,25,32,38,43,47,50,51,52],
+                      [ 9,18,26,33,39,44,48,51,53,54],
+                      [10,19,27,34,40,45,49,52,54,55]])
+
+    lt1 = np.array([1,3,5,4,9,2])
+    lt2 = np.array([1,3,5,7,4,9,6,2,3,4])
+    lt3 = np.arange(1,56)
+
+    np.testing.assert_array_equal( flat_triang_to_full(lt1), gold1 )
+    np.testing.assert_array_equal( flat_triang_to_full(lt2), gold2 )
+    np.testing.assert_array_equal( flat_triang_to_full(lt3), gold3 )
 

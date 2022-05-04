@@ -3,7 +3,8 @@ import numpy as np
 
 
 __all__ = ['stat_cov','sys_cov','build_sys_cx',
-           'symmetric2dTest','covar','cov_to_corr','prop_err_mean']
+           'symmetric2dTest','covar','cov_to_corr','prop_err_mean',
+           'flat_triang_to_full']
 
 
 def stat_cov(stat_err,stat_der):
@@ -395,8 +396,43 @@ def prop_err_mean(dx,axis=None):
     dmean = 1/N*np.sqrt(dx2.sum(axis=axis))
     return dmean
 
+def flat_triang_to_full(triang):
+    """
+    Take a flat 1-dim array that represents upper-triang
+    matrix and return the full symmetric matrix
 
+    Parameters
+    ----------
+    triang : array-like
+        Should be 1-dimensional, upper-triangular row-major order
 
+    Returns
+    -------
+    full : array-like
+        The full symmetric array
+
+    Examples
+    --------
+    >>> import nuctools as nuc
+    >>> import numpy as np
+    >>> lt = np.array([1,3,5,4,9,2])
+    >>> nuc.flat_triang_to_full(lt)
+    array([[1., 3., 5.],
+          [3., 4., 9.],
+          [5., 9., 2.]])
+
+    Notes
+    -----
+    Future changes may be needed to allow options for upper/lower 
+    and row-/column-major ordering of the flat array
+
+    """
+    rows = int(1/2*(np.sqrt(8*len(triang)+1)-1))
+    mask = np.tri(rows,dtype=bool).T # transpose: lower to upper
+    full = np.zeros((rows,rows))
+    full[mask] = triang
+    full += full.T*np.tri(rows,k=-1)
+    return full
 
 
 
