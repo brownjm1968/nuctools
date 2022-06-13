@@ -27,6 +27,8 @@ class ags:
         self.counts = None
         self.cps = None
         self.energy = None
+        self.obs = None
+        self.unc_obs = None
         
     def read_grouped_counts(self,spectrum,comp_pt,comp_fct,binsize):
         """
@@ -78,6 +80,56 @@ class ags:
         self.tof = hist.tof
         self.cps = hist.cps
         self.counts = hist.counts
+
+    def read_grouped_observable(self,spectrum,comp_pt,comp_fct,binsize):
+        """
+        Read in the grouped observable file from AGS and populate the 
+        tof, and cps attributes of the ags class
+        
+        Parameters
+        ----------
+        spectrum : str
+            The full file path to the AGS grouped observable file
+        comp_pt : array-like
+            Compression points given in bin numbers (integers). Must
+            be of length == len(comp_fct)+1
+        comp_fct : array-like
+            Compression factors for each group. These are specified in 
+            a separate text file from AGL. Typically in powers of 2 
+            (2^N).
+        binsize : float
+            The width of the base bin in [ns]
+
+        Returns
+        -------
+        nothing : None
+            Populates the attributes of the class: tof, obs, unc_obs
+
+        Examples
+        --------
+
+        Notes
+        -----
+
+        """
+        cp = np.array(comp_pt)
+        cf = 2**np.array(comp_fct)
+        #hist = pd.read_csv(filename,delim_whitespace=True,names=['bin','counts'])
+        hist = pd.DataFrame({
+            'obs'  : spectrum[0],
+            'dobs' : spectrum[1],
+            })
+        hist['tof'] = 0
+        
+        for i in range(len(cp)-1):
+            if i==0:
+                hist.loc[cp[i]:cp[i+1]-1,'tof'] = 0+np.arange(cp[i+1]-cp[i])*binsize*cf[i]
+            else:
+                hist.loc[cp[i]:cp[i+1]-1,'tof'] = hist.tof[cp[i]-1]+np.arange(cp[i+1]-cp[i])*binsize*cf[i]
+                
+        self.tof = hist.tof
+        self.obs = hist.obs
+        self.unc_obs = hist.dobs
 
 def e1p0(tof,p1,p2,p3):
     """
