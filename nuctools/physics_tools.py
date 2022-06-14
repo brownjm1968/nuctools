@@ -520,6 +520,11 @@ def wigner_spacing(x,avD):
     >>> import numpy as np
     >>> x = np.linspace(0,100,100)
     >>> Px = nuc.wigner_spacing(x,4.0)
+
+
+    Notes
+    -----
+    .. math:: P(S) = (\\pi S/2D^2)e^{-\\pi/4 S^2/D^2} dS
     """
 
     wig = np.pi/2/avD**2*x*np.exp(-1/4*np.pi*x**2/avD**2)
