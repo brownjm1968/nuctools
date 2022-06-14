@@ -11,7 +11,8 @@ c = 299.792458      # NIST speed of light [m/us]
 
 __all__ = ['pole_strength',
            'n_strength_func_frohner','n_strength_func','spin_stat_factor',
-           'r_inf','r_prime','calc_ac','penetrability','rho','wave_number']
+           'r_inf','r_prime','calc_ac','penetrability','rho','wave_number',
+           'wigner_spacing']
 
 def pole_strength(S,A,a_c):
     """
@@ -496,7 +497,33 @@ def wave_number(A,E):
     k = np.sqrt(2*mnc2*E)/(c*1e6)/hbar * A/(A+1) * 1e-15 # 1e-15 [m/Fermi]
     return k
 
+def wigner_spacing(x,avD):
+    """
+    Calculate the Wigner level-spacing distribution from the average 
+    spacing D (`avD`)
 
+    Parameters
+    ----------
+    x : array-like
+        The abscissae for the distribution
+    avD : float
+        The average level spacing
+
+    Returns
+    -------
+    wig : array-like
+        The y-values of the probability distribution
+
+    Examples
+    --------
+    >>> import nuctools as nuc
+    >>> import numpy as np
+    >>> x = np.linspace(0,100,100)
+    >>> Px = nuc.wigner_spacing(x,4.0)
+    """
+
+    wig = np.pi/2/avD**2*x*np.exp(-1/4*np.pi*x**2/avD**2)
+    return wig
 
 
 

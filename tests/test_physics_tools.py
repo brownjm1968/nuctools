@@ -75,3 +75,9 @@ def test_penetrability():
     assert pt.penetrability(3,a_c,A,E) == p**7/(225+45*p**2+6*p**4+p**6)
     
     assert pt.penetrability(4,a_c,A,E) == p**9/(11025+1575*p**2+135*p**4+10*p**6+p**8)
+
+def test_wigner_spacing():
+    x = np.array([2.0])  # spacing
+    D = 2.0              # average spacing
+
+    assert pt.wigner_spacing(x,D) == np.pi/4*np.exp(-np.pi/4)

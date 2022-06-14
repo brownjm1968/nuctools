@@ -628,7 +628,7 @@ def read_fitacs_par(filename,num_e_regions=1,max_orb_ang_mom=2):
             if res_pars_next and not pars_break:
                 # grab the level spacing for s-waves
                 if L == 0:
-                    D = line[60:70]
+                    D = float(line[60:70])
                 # choose element to fill
                 pos = region*3 + L
                 # set the values

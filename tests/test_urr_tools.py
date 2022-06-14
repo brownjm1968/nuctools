@@ -45,6 +45,6 @@ def test_read_fitacs_par():
 
     directory = os.getcwd() + '/tests/'
     a = ut.read_fitacs_par(directory+'test_urr.par',num_e_regions=3)
-    a = np.array(a[['stren','dstren','dist_R','ddist_R','gam_g','dgam_g','D']])
+    b = a[['stren','dstren','dist_R','ddist_R','gam_g','dgam_g','D']].to_numpy()
 
-    np.testing.assert_array_equal(a, test)
+    np.testing.assert_array_almost_equal(b, test)
