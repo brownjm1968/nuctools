@@ -4,6 +4,14 @@ nuctools package
 Submodules
 ----------
 
+nuctools.agl\_tools module
+--------------------------
+
+.. automodule:: nuctools.agl_tools
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 nuctools.ags\_tools module
 --------------------------
 

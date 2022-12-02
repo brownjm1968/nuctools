@@ -1,4 +1,5 @@
 import time
+import json
 import numpy as np
 import pandas as pd
 
@@ -7,7 +8,7 @@ __all__ = ['read_and_add','sum_tof']
 def read_and_add(filename,hist_df,ecal,llduld,wfcoeff,numadc=4,
                  unweighted=False,verbose=False,mca_df=None,aglgroup=False):
     """
-    TODO: issue with the gain
+    TODO: incorporate gain adjustment
     
     Read the "list-mode" binary data files and add the events
     to the histograms in the Pandas DataFrame `hist_df`
@@ -194,55 +195,20 @@ def read_and_add(filename,hist_df,ecal,llduld,wfcoeff,numadc=4,
             mca_df['adc{}'.format(i)] += np.histogram(datdict["mca{}".format(i)],bins=numbins,range=(0,numbins))[0]
 
     
-def sum_tof(file_list,badrundict,user_max_tof,bin_width,ecal,llduld,wfcoeff,
-            mcabins=0,numadc=4,unweighted=False,verbose=False,grouping_dict=None):
+def sum_tof(agl_inp_file,file_list):
     """
     Sum the TOF histograms from all events in the file list into a Pandas
     DataFrame and return the DataFrame
 
     Parameters
     ----------
+    agl_inp_file: str
+        The file name that describes necessary input for reading list-mode 
+        files like AGL
     file_list : list
         A list of strings with full filepaths. Suggest to glob with Python: 
         `glob.glob("my/directory/*.lst")`
-    badrundict : dict
-        A python dictionary with keys that match file ID and run number (e.g. 
-        `zr90_fp14a_f01_r01` or `zr90_fp14a_f01_r02`, and values that are lists 
-        of integers for file numbers
-    user_max_tof : float
-        The maximum time-of-flight value to histogram [us]
-    bin_width : float
-        The base bin width the TOF data were measured with [us].
-    ecal : array-like
-        A 2-dimensional array of N rows and 3 columns. Each column is for 
-        parameter `A0,A1,A2`. The number of rows is determined by the number of
-        ADCs in the data file. Accessing `A1` for ADC1, e.g., would be: 
-        `ecal[0][1]`
-    llduld : array-like
-        A 2-dimensional array of N rows and 2 columns. Column 0 represents the 
-        lower-level discriminator (LLD) and column 1 the upper-level discriminator
-        (ULD). The number of rows is determined by the number of ADCs in the file
-    wfcoeff : array-like
-        A 1-d array for weighting function coefficients defined by the GELINA 
-        weighting function. There are 8 parameters, :math:`a_i` from :math:`i=-3,4`
-    mcabins : int
-        Number of bins for an MCA spectrum, if zero no mca is given
-    numadc : int, optional
-        The number of ADCs listed **in the binary file. This will change the way**
-        **the binary file is read.** Often there will be either 2 or 4 ADCs, 4 is
-        the default.
-    unweighted : bool, optional
-        Whether to add unweighted histograms to the DataFrame 
-    verbose : bool, optional
-        Whether to increase print output
-    grouping_dict : dict
-        Python dict that has keys: "bin_width" (float describing base TOF bin), "cfct"
-        (list of bin-grouping factors), and "zones" (a list of zones as defined by AGL
-        softare). AGL defines "zones" as 1024 bins, so zones of [2,2] with "cfct" of
-        [1,2] means that 2048 bins have width :math:`2^{1}`*bin_width and the 2048 bins
-        following the first set have width :math:`2^{2}`*bin_width. This is GELINA-style
-        grouping language.
-
+    
     Returns
     -------
     data : DataFrame
@@ -256,23 +222,32 @@ def sum_tof(file_list,badrundict,user_max_tof,bin_width,ecal,llduld,wfcoeff,
     --------
     >>> import glob
     >>> import nuctools as nuc
-    >>> max_tof    = 2.5e3   # [us]
-    >>> bin_width  = 0.001 # [us]
-    >>> filelist   = glob.glob('Zr/zr90_fp14a_c01_r01_0*')
-    >>> badrundict = {"zr90_fp14a_f01_r01":[1,33,167]}
-    >>> ecal = [[ 144.85,6.4355,1],
-                [ 145.66,6.6452,1],
-                [ 179.75,6.3147,1],
-                [ 56.069,6.3898,1]] # [keV]
-    >>> llduld = [[16,1100],
-                  [13,1160],
-                  [12,1150],
-                  [30,1150]] # [keV]
-    >>> wfcoeff = [68.7,-513.4,1367.7,-1614.6,993.7,-159.5,16.5,-0.568] # [1/MeV]
-    >>>
-    >>> data = nuc.sum_tof(filelist,badrundict,user_max_tof,bin_width,ecal,llduld,wfcoeff)
+    >>> filelist   = glob.glob('La/la_fp4a_t03_r03_*.lst')
+    >>> 
+    >>> data = nuc.sum_tof("test-files/test-agl-inp.json",filelist)
 
     """
+
+    # -----------------------------------------------------
+    # Read dictionary into memory and move to variables
+    # -----------------------------------------------------
+    with open(agl_inp_file,'r') as f:
+        agldict = json.load(f)
+    numadc = agldict['numadc']
+    llduld = agldict['llduld']
+    mcabins = agldict['mcabins']
+    unweighted = agldict['unweighted']
+    verbose = agldict['verbose']
+    aglgroup = agldict['useAGLgrouping']
+    ecal = agldict['ecal']
+    wfcoeff = agldict['wfcoeff']
+    bin_width = agldict['bin_width']
+    user_max_tof = agldict['max_tof']
+    cfct = agldict['cfct']
+    zones = agldict['zones']
+    badrundict = agldict['badrundict']
+
+
     print("Total number of files: ",len(file_list))
     if(verbose):
         print("Number of ADCs: ",numadc)
@@ -283,13 +258,8 @@ def sum_tof(file_list,badrundict,user_max_tof,bin_width,ecal,llduld,wfcoeff,
     # - internally we use only [ns] to allow integer math
     # - TODO: move all input to YAML file
     # ------------------------------
-    aglgroup = False
     bin_width *= 1000 # go to [ns]
-    if( grouping_dict is not None ):
-        aglgroup = True
-        bin_width = grouping_dict['bin_width'] * 1000
-        cfct = grouping_dict['cfct']
-        zones = grouping_dict['zones']
+    if( aglgroup ):
         numbins = np.sum(zones*1024)
         toflist = np.array([0])
         for i,mult in enumerate(cfct):

@@ -15,7 +15,7 @@ class ags:
     ----------
     tof : array-like
         A 1-d array that is a Pandas Series of time-of-flight values,
-        typically given in [ns]
+        typically given in [us]
     counts : array-like
         A 1-d array that is a Pandas Series of binned counts
     cps : array-like
@@ -95,9 +95,9 @@ class ags:
         Parameters
         ----------
         FP : float
-            The flight path length the neutron traveled
+            The flight path length the neutron traveled [m]
         t0 : float
-            The time-zero used to correct the TOF spectrum
+            The time-zero used to correct the TOF spectrum [us]
         """
         self.energy = tt.tofe(self.tof-t0,FP)
 
