@@ -35,6 +35,57 @@ and operating this function with::
 
     hdf.visit(printname)
 
+========================
+AGL Input File Structure
+========================
+This new version of the AGL input file is in JSON format. There is an example template given in the ``tests`` folder. The required keys are:
+- 'numadc', 'llduld', 'mcabins', 'unweighted', 'verbose', 'useAGLgrouping', 'ecal', 'wfcoeff', 'bin_width', 'max_tof', 'cfct', 'zones', 'badrundict'
+
+These are defined by:
+
+badrundict : dict
+    A python dictionary with keys that match file ID and run number (e.g. 
+    ``zr90_fp14a_f01_r01`` or ``zr90_fp14a_f01_r02``, and values that are lists 
+    of integers for file numbers
+user_max_tof : float
+    The maximum time-of-flight value to histogram [us]
+bin_width : float
+    The base bin width the TOF data were measured with [us].
+ecal : array-like
+    A 2-dimensional array of N rows and 3 columns. Each column is for 
+    parameter ``A0,A1,A2``. The number of rows is determined by the number of
+    ADCs in the data file. Accessing `A1` for ADC1, e.g., would be: 
+    ``ecal[0][1]``
+llduld : array-like
+    A 2-dimensional array of N rows and 2 columns. Column 0 represents the 
+    lower-level discriminator (LLD) and column 1 the upper-level discriminator
+    (ULD). The number of rows is determined by the number of ADCs in the file
+wfcoeff : array-like
+    A 1-d array for weighting function coefficients defined by the GELINA 
+    weighting function (see ``nuctools.agl_tools.read_and_add()``).
+mcabins : int
+    Number of bins for an MCA spectrum, **if zero no mca is given**
+numadc : int, optional
+    The number of ADCs listed **in the binary file. This will change the way**
+    **the binary file is read.** Often there will be either 2 or 4 ADCs, 4 is
+    the default.
+unweighted : bool, optional
+    Whether to add unweighted histograms to the DataFrame 
+verbose : bool, optional
+    Whether to increase print output
+bin_width : float 
+    describing base width TOF bin
+cfct : list 
+    list of bin-grouping factors
+zones : list 
+    a list of zones as defined by AGL software
+
+AGL defines "zones" as 1024 bins, so zones of [2,2] with "cfct" of
+[1,2] means that 2048 bins have width 2^{1}*bin_width and the 2048 bins
+following the first set have width 2^{2}*bin_width. This is GELINA-style
+grouping language.
+
+
 =========================
 Installing CUDA on Ubuntu
 =========================

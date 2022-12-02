@@ -472,7 +472,7 @@ def comp_group(data,factor,c_pts,FP,avg=False,binedge=False,verbose=False):
 #------------------------------------------------------------------------------
 def gelina_group(data,factor,c_ind,avg=False,binedge=False,verbose=False):
     """
-    Group like AGL for GELINA comparison.
+    Group like AGL for GELINA comparison. This is experimental for now.
 
     Parameters
     ----------
