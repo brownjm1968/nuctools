@@ -1,11 +1,15 @@
 import numpy as np
 import pandas as pd
+from . import tof_tools as tt
 
 __all__ = ['ags','e1p0','e2p0','e3p0']
 
 class ags:
     """
-    Python class to contain AGS-like functions and information
+    Python class to contain AGS-like functions and information. Please see the AGS Manual 
+    (B. Becker, C. Bastian, J. Heyse, S. Kopecky, P. Schillebeeckx, AGS - Analysis of Geel
+    Spectra, European Commission, Joint Research Centre, September 2014) for more detail: 
+    https://www.oecd-nea.org/jcms/pl_19568/ags-analysis-of-geel-spectra-users-manual
 
     Attributes
     ----------
@@ -30,7 +34,7 @@ class ags:
         self.obs = None
         self.unc_obs = None
         
-    def read_grouped_counts(self,spectrum,comp_pt,comp_fct,binsize):
+    def read_grouped_counts(self,spectrum,comp_pt,comp_fct,binsize,triggers):
         """
         Read in the grouped counts file from AGL and populate the 
         counts, tof, and cps attributes of the ags class
@@ -47,7 +51,9 @@ class ags:
             a separate text file from AGL. Typically in powers of 2 
             (2^N).
         binsize : float
-            The width of the base bin in [ns]
+            The width of the base bin in [us]
+        triggers : integers
+            the number of times the linac fired
 
         Returns
         -------
@@ -65,13 +71,13 @@ class ags:
         cf = 2**np.array(comp_fct)
         #hist = pd.read_csv(filename,delim_whitespace=True,names=['bin','counts'])
         hist = pd.DataFrame({
-            'bin'    : spectrum[0],
-            'counts' : spectrum[1],
+            'counts'    : spectrum
             })
-        hist['cps'],hist['tof'] = 0,0
+        hist['cps'],hist['dcps'],hist['tof'] = 0,0,0
         
         for i in range(len(cp)-1):
-            hist.loc[cp[i]:cp[i+1]-1,'cps'] = hist.counts[cp[i]:cp[i+1]]/(cf[i])
+            hist.loc[cp[i]:cp[i+1]-1,'cps'] = hist.counts[cp[i]:cp[i+1]]/(cf[i]*triggers*binsize*1e-6)
+            hist.loc[cp[i]:cp[i+1]-1,'dcps'] = np.sqrt(hist.counts[cp[i]:cp[i+1]])/(cf[i]*triggers*binsize*1e-6)
             if i==0:
                 hist.loc[cp[i]:cp[i+1]-1,'tof'] = 0+np.arange(cp[i+1]-cp[i])*binsize*cf[i]
             else:
@@ -79,57 +85,21 @@ class ags:
                 
         self.tof = hist.tof
         self.cps = hist.cps
+        self.dcps = hist.dcps
         self.counts = hist.counts
 
-    def read_grouped_observable(self,spectrum,comp_pt,comp_fct,binsize):
+    def calc_energy(self,FP,t0):
         """
-        Read in the grouped observable file from AGS and populate the 
-        tof, and cps attributes of the ags class
-        
+        Calculate energy from the existing TOF spectrum
+
         Parameters
         ----------
-        spectrum : str
-            The full file path to the AGS grouped observable file
-        comp_pt : array-like
-            Compression points given in bin numbers (integers). Must
-            be of length == len(comp_fct)+1
-        comp_fct : array-like
-            Compression factors for each group. These are specified in 
-            a separate text file from AGL. Typically in powers of 2 
-            (2^N).
-        binsize : float
-            The width of the base bin in [ns]
-
-        Returns
-        -------
-        nothing : None
-            Populates the attributes of the class: tof, obs, unc_obs
-
-        Examples
-        --------
-
-        Notes
-        -----
-
+        FP : float
+            The flight path length the neutron traveled
+        t0 : float
+            The time-zero used to correct the TOF spectrum
         """
-        cp = np.array(comp_pt)
-        cf = 2**np.array(comp_fct)
-        #hist = pd.read_csv(filename,delim_whitespace=True,names=['bin','counts'])
-        hist = pd.DataFrame({
-            'obs'  : spectrum[0],
-            'dobs' : spectrum[1],
-            })
-        hist['tof'] = 0
-        
-        for i in range(len(cp)-1):
-            if i==0:
-                hist.loc[cp[i]:cp[i+1]-1,'tof'] = 0+np.arange(cp[i+1]-cp[i])*binsize*cf[i]
-            else:
-                hist.loc[cp[i]:cp[i+1]-1,'tof'] = hist.tof[cp[i]-1]+np.arange(cp[i+1]-cp[i])*binsize*cf[i]
-                
-        self.tof = hist.tof
-        self.obs = hist.obs
-        self.unc_obs = hist.dobs
+        self.energy = tt.tofe(self.tof-t0,FP)
 
 def e1p0(tof,p1,p2,p3):
     """

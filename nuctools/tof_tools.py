@@ -6,7 +6,8 @@ import time
 from . import physics_tools as pt
 from . import sam_tools as st
 
-__all__ = ['tofe','etof','opsum','single_group','comp_group','sgfilter','optstat_group']
+__all__ = ['tofe','etof','opsum','single_group','comp_group','gelina_group','sgfilter',
+           'optstat_group']
 
 
 def tofe(tof,FP):
@@ -468,6 +469,139 @@ def comp_group(data,factor,c_pts,FP,avg=False,binedge=False,verbose=False):
     gdata = np.hstack([val for val in gdata])
         
     return gdata
+#------------------------------------------------------------------------------
+def gelina_group(data,factor,c_ind,avg=False,binedge=False,verbose=False):
+    """
+    Group like AGL for GELINA comparison.
+
+    Parameters
+    ----------
+    data : 2-d numpy array
+        Array with columns "tof","counts", and "error".
+    factor : 1-d numpy array
+        Compression factors for the tof groups, 1st compression factor
+        corresponds to time of flights below c_pt[0], 2nd corresponds to tofs above
+        c_pt[0] and below c_pt[1], and so on until end of range is found.
+    c_pts : 1-d numpy array
+        Compression points that define the edges of the bins that are to be grouped.
+        List points from lowest to highest (should re-write to sort and remove user
+        capability to fail.)
+    verbose : bool
+        Whether to print out information to STDOUT
+
+    Returns
+    -------
+    gdata : 2-d numpy array
+        Returns the grouped data with columns: tof,bin_width,counts,error counts
+
+    """
+    ng,ld = len(factor),len(data[0])
+    gdata = []
+    # loop over multiplication factors: mult
+    for i, mult in enumerate(factor):
+        # if in first compression point group
+        if i == 0:
+            # shape of temporary array (rows,cols)
+            # rows are how many groups we'll have, cols are how 
+            # many elements are being binned
+            shape = (c_ind[i]//mult,mult)
+            # tof for bin is mean time in bin vector
+            # resize the data and take the average of the row
+            #gtof = [vector.mean() for vector in np.resize(data[0][0:c_ind[0]],shape)]
+            gtof = np.resize(data[0][0:c_ind[0]],shape).mean(axis=1)
+            # if user selected to return tof of leading bin edge
+            if binedge == True:
+                # tof for bin is time of first element in bin vector
+                edge_gtof = np.resize(data[0][0:c_ind[0]],shape)[:,0]
+            # calculate the average counts in data[1]
+            if avg == True:
+                gcounts = np.resize(data[1][0:c_ind[0]],shape).mean(axis=1)
+                ergcounts = 1/mult*np.sqrt(np.resize(data[2][0:c_ind[0]]**2,shape).sum(axis=1))
+            # calculate the sum of counts in data[1]
+            else:
+                # counts for bin is the sum of all elements in bin vector
+                # resize the data and take the sum of the row
+                gcounts = np.resize(data[1][0:c_ind[0]],shape).sum(axis=1)
+                ergcounts = np.sqrt(gcounts)
+            # difference between time bins to plot cps
+            dt = np.diff(gtof)
+            # diff is calc. between points, therefore has n-1 pts -- add 1 at 0
+            dt = np.insert(dt,0,dt[0])
+            # if user asked for leading tof bin edge append it as an additional 
+            # column to gdata
+            if binedge == True:
+                gdata.append([gtof,dt,gcounts,ergcounts,edge_gtof])
+            else:
+                gdata.append([gtof,dt,gcounts,ergcounts])
+            continue
+        # if in the last compression group (in tof)
+        if i == ng-1:
+            # shape of temporary array
+            shape = ((ld-c_ind[i-1])//mult,mult)
+            # tof for bin is mean time in bin vector
+            gtof = np.resize(data[0][c_ind[i-1]:ld],shape).mean(axis=1)
+            # if user selected to return tof of leading bin edge
+            if binedge == True:
+                # tof for bin is time of first element in bin vector
+                edge_gtof = np.resize(data[0][c_ind[i-1]:ld],shape)[:,0]
+            # calculate the average counts in data[1]
+            if avg == True:
+                gcounts = np.resize(data[1][c_ind[i-1]:ld],shape).mean(axis=1)
+                ergcounts = 1/mult*np.sqrt(np.resize(data[2][c_ind[i-1]:ld]**2,shape).sum(axis=1))
+            # calculate the sum of counts in data[1]
+            else:
+                # counts for bin is the sum of all elements in bin vector
+                gcounts = np.resize(data[1][c_ind[i-1]:ld],shape).sum(axis=1)
+                ergcounts = np.sqrt(gcounts)
+            # difference between time bins to plot cps
+            dt = np.diff(gtof)
+            # diff is calc. between points, therefore has n-1 pts -- add 1 at 0
+            dt = np.insert(dt,0,dt[0])
+            # if user asked for leading tof bin edge append it as an additional 
+            # column to gdata
+            if binedge == True:
+                gdata.append([gtof,dt,gcounts,ergcounts,edge_gtof])
+            else:
+                gdata.append([gtof,dt,gcounts,ergcounts])
+            continue
+        else:
+            # shape of temporary array
+            shape = (((c_ind[i]-(c_ind[i-1]))//mult),mult)
+            # tof for bin is avg of elements in bin vector
+            # resize the data and take the average of the row
+            gtof = np.resize(data[0][c_ind[i-1]:c_ind[i]],shape).mean(axis=1)
+            # if user selected to return tof of leading bin edge
+            if binedge == True:
+                # tof for bin is time of first element in bin vector
+                edge_gtof = np.resize(data[0][c_ind[i-1]:c_ind[i]],shape)[:,0]
+            # calculate the average counts in data[1]
+            if avg == True:
+                gcounts = np.resize(data[1][c_ind[i-1]:c_ind[i]],shape).mean(axis=1)
+                ergcounts = 1/mult*np.sqrt(np.resize(data[2][c_ind[i-1]:c_ind[i]]**2,shape).sum(axis=1))
+            # calculate the sum of counts in data[1]
+            else:
+                # counts for bin is the sum of all elements in bin vector
+                # resize the data and take the sum of the row
+                gcounts = np.resize(data[1][c_ind[i-1]:c_ind[i]],shape).sum(axis=1)
+                ergcounts = np.sqrt(gcounts)
+            # difference between time bins to plot cps
+            dt = np.diff(gtof)
+            # diff is calc. between points, therefore has n-1 pts -- add 1 at 0
+            dt = np.insert(dt,0,dt[0])
+            # if user asked for leading tof bin edge append it as an additional 
+            # column to gdata
+            if binedge == True:
+                gdata.append([gtof,dt,gcounts,ergcounts,edge_gtof])
+            else:
+                gdata.append([gtof,dt,gcounts,ergcounts])
+            
+    # hstack in this case is appending all the gdata arrays into one array 
+    # with columns gtof,gcounts,ergcounts
+    gdata = np.hstack([val for val in gdata])
+        
+    return gdata
+
+
 #------------------------------------------------------------------------------
 def optstat_group(data,FP,D,res_per_bin,E_cpts=[1e2,1e3,1e4],verbose=False,
                   t0=0.0,binedge=False):
