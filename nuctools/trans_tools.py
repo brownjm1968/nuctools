@@ -4,7 +4,7 @@ from . import tof_tools as tt
 from . import math_tools as mt
 from . import sam_tools as st
 
-__all__ = ['Trans','write_covar_file','read_covar_file', 'write_sammy_idc_file']
+__all__ = ['Trans','calc_cov','write_covar_file','read_covar_file', 'write_sammy_idc_file']
 
 # TODO: create sample/open objects
 
@@ -505,7 +505,109 @@ class Trans:
         # error on the cross section for the sample transmission
         self.dsig = self.dtrans/N/self.trans
         
+
+def calc_cov(mon_list,dmon_list,room_bkgs,droom_bkgs,norm_list,dnorm_list,tof,sample_cps,
+             sample_dcps,open_cps,open_dcps,bkg_function,bkg_pars,bkg_pars_cov):
+    """
+    Calculate covariance for transmission T = ( a1*Cs - a2*ks*B - B0s )/( a2*Co - a4*ko*B - B0o )
+
+    To avoid code complexity, for now I'll force the user to specify everything up front instead
+    of passing a Trans class
+
+    Parameters
+    ----------
+    mon_list : list
+        A list of the monitor values in order: [a1,a2,a3,a4]
+    dmon_list : list
+        A list of the uncertainty on monitor values in matching order
+    room_bkgs : list
+        A list of the room/ambient backgrounds a.k.a. B-zeros in order: [B0s,B0o]
+    droom_bkgs : list
+        A list of the uncertainty on room/ambient backgrounds in matching order
+    norm_list : list
+        A list of the normalizations for background in order: [ks,ko]
+    dnorm_list : list
+        A list of the uncertainty on normalizations for backgrounds in matching order
+    tof : array-like
+        A 1-dim array of time-of-flight for sample and open count rates. This must
+        be "true" TOF, i.e. time-zero subtracted in order to get the background 
+        correct.
+    sample_cps : array-like
+        A 1-dim array of sample count rate in order of time-of-flight (Cs)
+    sample_dcps : array-like
+        A 1-dim array of unc. on sample count rate in order of time-of-flight (dCs)
+    open_cps : array-like
+        A 1-dim array of open count rate in order of time-of-flight (Co)
+    open_dcps : array-like
+        A 1-dim array of unc. on open count rate in order of time-of-flight (Co)
+    bkg_function : str
+        The name of the background function used, matching the names in class Trans 
+    bkg_pars : list
+        The parameters needed for the background function (B-zero subtracted!)
+    bkg_pars_cov : array-like
+        A 2-dim array of the covariance for the fitted parameters.
+
+
+    """
+    available_bkg_funcs = np.array(['power_law','exp'])
+    if not (available_bkg_funcs == bkg_function).any():
+        raise ValueError("background function not available")
+    # ----------------------------
+    # Rename to simplify
+    # ----------------------------
+    ks,ko,dks,dko = norm_list[0],norm_list[1],dnorm_list[0],dnorm_list[1]
+    a1,a2,a3,a4 = mon_list[0],mon_list[1],mon_list[2],mon_list[3]
+    da1,da2,da3,da4 = dmon_list[0],dmon_list[1],dmon_list[2],dmon_list[3]
+    b0s,b0o,db0s,db0o = room_bkgs[0],room_bkgs[1],droom_bkgs[0],droom_bkgs[1]
+    cs,co,dcs,dco = sample_cps,open_cps,sample_dcps,open_dcps
+    N,D,bfit = 1,1,0
+    # ----------------------------
+    # Bkg specific variables 
+    # ----------------------------
+    if bkg_function == 'power_law':
+        A,B = bkg_pars[0],bkg_pars[1]
+        bfit = A*tof**(-B)
+        N = (a1*cs-a2*ks*bfit-b0s)
+        D = (a3*co-a4*ko*bfit-b0o)
+        dda = (-D*ks + N*ko)*tof**-B/D**2 
+        ddb = (-D*ks + N*ko)*-1*bfit*np.log(tof)/D**2
+        fit_ders = [dda,ddb]
+    if bkg_function == 'exp':
+        A,B = bkg_pars[0],bkg_pars[1]
+        bfit = A*np.exp(-t*B)
+        N = (a1*cs-a2*ks*bfit-b0s)
+        D = (a3*co-a4*ko*bfit-b0o)
+        dda  = -1*(k_s1*D+k_o*N)/(A*D**2)
+        ddb  = (k_s1*D+k_o*N)*df.bfit*df.tof/D**2
+        fit_ders = [dda,ddb]
+    # ----------------------------
+    # Bkg agnostic variables
+    # ----------------------------
+    # statistical
+    ddcs = a1/D
+    ddco = -a3*N/D**2
+    # systematic
+    ddks = -a2*bfit/D
+    ddko = a4*N*bfit/D**2
+    ddb0s = -1/D
+    ddb0o = 1*N/D**2
+    dda1 = cs/D
+    dda2 = -ks*bfit/D
+    dda3 = -co*N/D**2
+    dda4 = ko*bfit*N/D**2
+    # statistical err and derivs *order matters!*
+    stat_err_list = [dcs,dco]
+    stat_der_list = [ddcs,ddco]
+    # systematic err and derivs *order matters!*
+    sys_err_list = [dks,dko,db0s,db0o,da1,da2,da3,da4] # doesn't inc. A,B they come with covar mat
+    sys_der_list = np.concatenate([fit_ders,[ddks,ddko,ddb0s,ddb0o,dda1,dda2,dda3,dda4]])
     
+    stat = mt.stat_cov(stat_err_list,stat_der_list)
+    syst = mt.sys_cov(sys_err_list,sys_der_list,cov_mat=bkg_pars_cov) # Note bkg. cov. matrix here
+    
+    cov = stat+syst
+    return cov
+
 def write_covar_file(filename,energy,t,dt,sys_err_list,stat_err_list,sys_der_list,stat_der_list,
                  sys_err_str_list,ptwise_str_list,sys_cov=None,sys_cov_str_list=None,
                  high_precision=False):
