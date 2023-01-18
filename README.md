@@ -69,7 +69,9 @@ just generated .rst files and type:
 make html
 ```
 
-Note: To build the equations properly you must have LaTeX installed.
+Note: 
+- To build the equations properly you must have LaTeX installed
+- Some packages are required for html, and can be installed with `pip` (e.g. `python -m pip install sphinx`)
 
 --- To Test -----------------
 

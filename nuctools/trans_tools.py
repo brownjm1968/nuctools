@@ -507,12 +507,13 @@ class Trans:
         
 
 def calc_cov(mon_list,dmon_list,room_bkgs,droom_bkgs,norm_list,dnorm_list,tof,sample_cps,
-             sample_dcps,open_cps,open_dcps,bkg_function,bkg_pars,bkg_pars_cov):
+             sample_dcps,open_cps,open_dcps,bkg_function,bkg_pars,bkg_pars_cov,split=False,
+             trans_idc_output=False):
     """
     Calculate covariance for transmission T = ( a1*Cs - a2*ks*B - B0s )/( a2*Co - a4*ko*B - B0o )
 
     To avoid code complexity, for now I'll force the user to specify everything up front instead
-    of passing a Trans class
+    of passing a Trans class. Available background functions: "power_law", "exp"
 
     Parameters
     ----------
@@ -546,7 +547,20 @@ def calc_cov(mon_list,dmon_list,room_bkgs,droom_bkgs,norm_list,dnorm_list,tof,sa
         The parameters needed for the background function (B-zero subtracted!)
     bkg_pars_cov : array-like
         A 2-dim array of the covariance for the fitted parameters.
-
+    split : bool, optional
+        Whether to return two parts of covariance instead of the sum, the statistical
+        and the systematic
+    trans_idc_output : bool, optional
+        Extra output to be used with function `write_sammy_idc_file()`. In addition to
+        default output `cov`, 3 extra variables are returned: `stat`, `syst_full`, and
+        `sys_der_list`. 
+    
+    Returns
+    -------
+    cov : array-like
+        A 2-dim numpy array with full covariance
+    stat,syst : tuple
+        A tuple of 2 2-dim arrays, the statistical and systematic covariance
 
     """
     available_bkg_funcs = np.array(['power_law','exp'])
@@ -574,11 +588,11 @@ def calc_cov(mon_list,dmon_list,room_bkgs,droom_bkgs,norm_list,dnorm_list,tof,sa
         fit_ders = [dda,ddb]
     if bkg_function == 'exp':
         A,B = bkg_pars[0],bkg_pars[1]
-        bfit = A*np.exp(-t*B)
+        bfit = A*np.exp(-tof*B)
         N = (a1*cs-a2*ks*bfit-b0s)
         D = (a3*co-a4*ko*bfit-b0o)
-        dda  = -1*(k_s1*D+k_o*N)/(A*D**2)
-        ddb  = (k_s1*D+k_o*N)*df.bfit*df.tof/D**2
+        dda  = -1*(ks*D+ko*N)/(A*D**2)
+        ddb  = (ks*D+ko*N)*bfit*tof/D**2
         fit_ders = [dda,ddb]
     # ----------------------------
     # Bkg agnostic variables
@@ -606,7 +620,24 @@ def calc_cov(mon_list,dmon_list,room_bkgs,droom_bkgs,norm_list,dnorm_list,tof,sa
     syst = mt.sys_cov(sys_err_list,sys_der_list,cov_mat=bkg_pars_cov) # Note bkg. cov. matrix here
     
     cov = stat+syst
-    return cov
+
+    # ----------------------------
+    # Return options
+    # ----------------------------
+    if trans_idc_output:
+        # Form the full syst par cov 
+        K = len(bkg_pars_cov)+len(sys_err_list)
+        syst_full = np.zeros((K,K))
+        syst_full[0:len(bkg_pars_cov),0:len(bkg_pars_cov)] = bkg_pars_cov
+        for i in range(len(sys_err_list)):
+            index = i+len(bkg_pars_cov)
+            syst_full[index,index] = sys_err_list[i]**2
+
+        return cov,stat,syst_full,sys_der_list
+    if split:
+        return stat,syst
+    else:
+        return cov
 
 def write_covar_file(filename,energy,t,dt,sys_err_list,stat_err_list,sys_der_list,stat_der_list,
                  sys_err_str_list,ptwise_str_list,sys_cov=None,sys_cov_str_list=None,
