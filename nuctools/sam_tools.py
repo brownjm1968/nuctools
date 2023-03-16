@@ -4,9 +4,41 @@ from . import tof_tools as tt
 from . import funky
 import time
 
-__all__ = ['print_chann','create_sam_inp','fmt_twenty','fmt_ten','fmt_par',
+__all__ = ['read_h5cov',
+           'print_chann','create_sam_inp','fmt_twenty','fmt_ten','fmt_par',
            'switch_par_flags','describe_norsum_header','LPTtoCOV','mini_cov']
 
+
+def read_h5cov(filename):
+    """
+    New SAMMY covariance file is in HDF5 in the form of an upper 
+    triangular matrix. Return covariance, parameters, etc.
+
+    Parameters
+    ----------
+    filename : str
+        The path and filename for the SAMMY covariance file in HDF5 format
+
+    Returns
+    -------
+    ucov,upar,covind,ispup : tuple
+        A tuple of numpy arrrays with the reduced parameters covariance matrix, 
+        reduced parameters, indices for parameters into the covariance matrix, 
+        and a list of 0,1 booleans on whether the parameter was PUP'd
+    """
+    with h5.File(filename,"r+") as f:
+        uptri_cov = np.array(f['covar'])
+        upar = np.array(f['param'])
+        covind = np.array(f['covind'])
+        ispup = np.array(f['ispup'])
+    lp = len(upar)
+    idx = np.arange(lp)
+    ucov = np.zeros((lp,lp))
+    ucov[np.triu_indices(lp)] = uptri_cov
+    ucov += ucov.T
+    ucov[idx,idx] /= 2
+
+    return ucov,upar,covind,ispup
 
 def print_chann(cpts,factor,base_width,t0,FP,uncertainty="0.8"):
     """
