@@ -94,24 +94,36 @@ class Rpy_xdr:
     """
     
     def __init__(self,folder,ext='mp',mon_line_num=43,num_samp=None,samp_line_num=40,
-                 raw_bw=None,min_tof=0.0):
+                 raw_bw=None,head_len=None,min_tof=0.0,verbose=False,mon_header=None):
         
         self.folder = folder
         self.ext = ext
         self.mon_line_num = mon_line_num
         self.samp_line_num = samp_line_num
+        self.head_len = head_len
+        self.mon_header = mon_header
 
         if num_samp is None:
             self.num_samp = 4
             warnings.warn("Setting number of samples to 4")
         else:
             self.num_samp = num_samp
+            if verbose:
+                print("Number of samples: {}".format(self.num_samp))
         
         if raw_bw is None:
             self.raw_bw = 0.0064
             warnings.warn("Setting bin width to default: 0.0064 us")
         else:
             self.raw_bw = raw_bw
+
+        if head_len is None:
+            self.head_len = 59
+            warnings.warn("Setting header length to 59")
+
+        if mon_header is None:
+            self.mon_header = "m1 m2 m3 m4 m5 m6 m7 m8 m9 m10 det"
+            warnings.warn("Setting monitor header to default.")
 
         self.min_tof = min_tof
 
@@ -127,7 +139,7 @@ class Rpy_xdr:
         self.monitors = [None]*self.num_samp  # <-- Each index could be diff. len()
         self.det_sum  = [None]*self.num_samp  # <-- Each index could be diff. len()
         for samp_num in range(self.num_samp):
-            self.read_files(samp_num)
+            self.read_files(samp_num,verbose)
         
         # ---------------------------
         # calculate the percent std of monitor/det_counts ratio
@@ -136,7 +148,7 @@ class Rpy_xdr:
         for samp_num in range(self.num_samp):
             self.mon_frac_std(samp_num)
     
-    def read_files(self,samp_num):
+    def read_files(self,samp_num,verbose):
         
         """
         Grab all the files with the specified extension and
@@ -147,7 +159,10 @@ class Rpy_xdr:
         
         first_file = True
         
-        for i,file in enumerate(glob.glob('{}*.{}'.format(self.folder,self.ext))):
+        for i,file in enumerate(np.sort(glob.glob('{}*.{}'.format(self.folder,self.ext)))):
+
+            if verbose: 
+                print("File {}, {}".format(i,file))
             
             # ---------------------------
             # continue if wrong sample
@@ -164,7 +179,7 @@ class Rpy_xdr:
             # ---------------------------
             # read the detector tof counts
             # ---------------------------
-            det = np.genfromtxt(file,skip_header=59)
+            det = np.genfromtxt(file,skip_header=self.head_len)
             
             # ---------------------------
             # gate the tof of total detector counts for monitor normalization
@@ -238,11 +253,25 @@ class Rpy_xdr:
             # ---------------------------
             tof_array = np.arange(len(self.det_sum[samp_num]))*self.raw_bw
             save_arr = np.vstack((tof_array,self.det_sum[samp_num])).T
+
+            # ---------------------------
+            # Get the monitors
+            # ---------------------------
+            monstring = ""
+            for mon in self.monitors[samp_num].sum(axis=1):
+                monstring += "{} ".format(mon)
+
+            # ---------------------------
+            # write the monitors to file
+            # ---------------------------
+            np.savetxt('data/{}_mon_{}.dat'.format(name_string,samp_num),
+                       self.monitors[samp_num].T,fmt="%d",
+                       header=self.mon_header,comments='')
             
             # ---------------------------
             # Save with 6 pt. precision
             # ---------------------------
             np.savetxt(output_folder+"{}_samp_{}.dat".format(name_string,samp_num),
-                       save_arr,fmt='%.6f')
+                       save_arr,fmt='%.6f',header=monstring)
                 
                 
