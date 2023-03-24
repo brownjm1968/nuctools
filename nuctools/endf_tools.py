@@ -2,7 +2,8 @@
 import numpy as np
 
 __all__ = ['read_3col_pendf','write_pendf_xs',"endf_float_str",
-           "update_file2","setupdict","update_pardict","strip_line_num"]
+           "update_file2","setupdict","update_pardict","strip_line_num",
+           "loglog_interp"]
 
 
 def read_3col_pendf(file,start,finish):
@@ -373,7 +374,29 @@ def strip_line_num(inpfile,outfile):
             line = line[0:75] + '\n'
             f.write(line)
 
+def loglog_interp(x,xp,fp):
+    """
+    Translate x,xp,fp into log-log space, linearly interpolate, and
+    return them back in the same space as before
 
+    Parameters
+    ----------
+    x : array-like
+        The new grid onto which we want to interpolate
+    xp : array-like
+        The old grid from which we interpolate
+    fp : array-like
+        The "y-values" for xp
+
+    Returns
+    -------
+    y : array-like
+        The "y-values" that we linearly interpolated in log-log space
+    """
+    lx  = np.log(x)
+    lxp = np.log(xp)
+    lfp = np.log(fp)
+    return np.exp(np.interp(lx,lxp,lfp))
 
 
 
