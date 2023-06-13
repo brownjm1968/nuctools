@@ -36,15 +36,11 @@ def test_get_montrig():
 	        i+=mon_vector
 	        j+=trig_vector
 
-	manual_montrig = np.array([i,j])
+	manual_montrig = np.concatenate((i,j))
 	
 	fnc_montrig = get_montrig("tests/",sample)
 
-	#assert assert_allclose(manual_montrig,fnc_montrig)
-	for i,val in enumerate(manual_montrig[0]):
-		assert val==fnc_montrig[0][i]
-	for i,val in enumerate(manual_montrig[1]):
-		assert val==fnc_montrig[1][i]
+	assert_array_equal(manual_montrig,fnc_montrig)
 
 def test_count_rate():
 	tof_arr = np.array([[1,2,3],[20,10,5]])
