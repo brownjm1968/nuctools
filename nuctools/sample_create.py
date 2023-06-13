@@ -204,13 +204,13 @@ def get_montrig(hdf_address,samp_name,plot=False,verbose=False):
             plt.legend()
             plt.show()
         
-        montrig = np.array([sum_mon,sum_trig])
+        montrig = np.concatenate((sum_mon,sum_trig))
         if verbose == True:
             print("         Counts          Std/mean")
             for i in range(len(stdmean)):
                 print("Mon. {} : {}  ,  {}".format(i,sum_mon[i],stdmean[i]))
             if len(sum_trig>1):
-                print("Triggers : {}  {}".format(montrig[1][0],montrig[1][1]))
+                print("Triggers : {}  {}".format(montrig[6],montrig[7]))
 
     return montrig
 

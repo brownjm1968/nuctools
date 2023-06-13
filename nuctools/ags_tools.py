@@ -28,6 +28,7 @@ class ags:
     """
     def __init__(self):
         self.tof = None
+        self.dtof = None
         self.counts = None
         self.cps = None
         self.energy = None
@@ -71,19 +72,22 @@ class ags:
         cf = 2**np.array(comp_fct)
         #hist = pd.read_csv(filename,delim_whitespace=True,names=['bin','counts'])
         hist = pd.DataFrame({
-            'counts'    : spectrum
+            'counts'    : spectrum,
+            'dtof' : np.zeros(len(spectrum))
             })
         hist['cps'],hist['dcps'],hist['tof'] = 0,0,0
         
         for i in range(len(cp)-1):
             hist.loc[cp[i]:cp[i+1]-1,'cps'] = hist.counts[cp[i]:cp[i+1]]/(cf[i]*triggers*binsize*1e-6)
             hist.loc[cp[i]:cp[i+1]-1,'dcps'] = np.sqrt(hist.counts[cp[i]:cp[i+1]])/(cf[i]*triggers*binsize*1e-6)
+            hist.loc[cp[i]:cp[i+1]-1,'dtof'] = cf[i]*binsize
             if i==0:
                 hist.loc[cp[i]:cp[i+1]-1,'tof'] = 0+np.arange(cp[i+1]-cp[i])*binsize*cf[i]
             else:
                 hist.loc[cp[i]:cp[i+1]-1,'tof'] = hist.tof[cp[i]-1]+np.arange(cp[i+1]-cp[i])*binsize*cf[i]
                 
         self.tof = hist.tof
+        self.dtof = hist.dtof
         self.cps = hist.cps
         self.dcps = hist.dcps
         self.counts = hist.counts
@@ -190,6 +194,28 @@ def e3p0(tof,p1,p2,p3,p4,p5,p6,p7,p8,p9,p10):
     .. math:: f(t) = p1 + p2e^{p3t+p4} + p5e^{p6t+p7} + p8e^{p9t+p10}
     """
     return p1 + p2*np.exp(p3*tof+p4) + p5*np.exp(p6*tof+p7) + p8*np.exp(p9*tof+p10)
+
+
+def dtco(dtof,counts,dead_time,trigs):
+
+    lc = len(counts)
+    SUM = np.zeros(lc)
+    time_window = 0.0
+    for i in range(lc):
+        if tof[i] < dead_time:
+            SUM[i] = 0.0
+        else: 
+            i0 = None
+            time_sum = 0
+            tind = i-1
+            while time_sum < dead_time:
+                time_sum += dtof[tind]
+                tind-1
+            SUM = 1.
+    corr_counts = trigs * ( -np.log( 1-(counts/trigs)/(1-SUM) ) )
+
+
+
 
 
 
