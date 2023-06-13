@@ -15,3 +15,8 @@
 
 # the hdf5 file in tests
 *.h5
+
+# testing stuff
+/.coverage*
+/build/*
+/junit/*
