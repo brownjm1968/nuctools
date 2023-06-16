@@ -13,6 +13,6 @@ setup(
     license='BSD 3-clause',
     long_description=open('README.md').read(),
     install_requires=['numpy','pandas','scipy','h5py','pyyaml',
-                      'numba','matplotlib','pytest']
+                      'matplotlib','pytest']
 )
 

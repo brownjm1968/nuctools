@@ -1,7 +1,6 @@
 import pandas as pd
 import numpy as np
 import scipy.integrate as intgr
-from numba import jit
 import time
 
 # run all functions?
