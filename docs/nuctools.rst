@@ -20,6 +20,14 @@ nuctools.ags\_tools module
    :undoc-members:
    :show-inheritance:
 
+nuctools.ampx\_tools module
+---------------------------
+
+.. automodule:: nuctools.ampx_tools
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 nuctools.endf\_tools module
 ---------------------------
 
@@ -104,6 +112,14 @@ nuctools.sample\_create module
 ------------------------------
 
 .. automodule:: nuctools.sample_create
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+nuctools.scaledata\_tools module
+--------------------------------
+
+.. automodule:: nuctools.scaledata_tools
    :members:
    :undoc-members:
    :show-inheritance:
