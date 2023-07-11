@@ -3,25 +3,8 @@ import h5py as h5
 import time
 import warnings
 
-__all__ = ['printname','check_hdf5_triggers']
+__all__ = ['check_hdf5_triggers']
 
-def printname(name):
-    """ 
-    Print whatever is given for name 
-    
-    Parameters
-    ----------
-    name : object
-        Any printable object
-
-    Returns
-    -------
-    no return : 
-        print statement
-
-    """
-
-    print(name)
 
 def check_hdf5_triggers(hdf5_folder,sample_name):
     """

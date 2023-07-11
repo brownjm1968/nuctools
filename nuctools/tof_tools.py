@@ -5,9 +5,10 @@ from numba import jit
 import time
 from . import physics_tools as pt
 from . import sam_tools as st
+from . import math_tools as mt
 
 __all__ = ['tofe','etof','opsum','single_group','comp_group','gelina_group','sgfilter',
-           'optstat_group']
+           'optstat_group','calc_notch']
 
 
 def tofe(tof,FP):
@@ -777,3 +778,38 @@ def sgfilter(f,df,window,poly,deriv=0):
     return s
 
 #------------------------------------------------------------------------------
+def calc_notch(spect,lim1,lim2):
+    """
+    Calculate the average count rate at time-of-flight (TOF) values
+    that are within the limits lim1, lim2
+
+    Parameters
+    ----------
+    spect : Pandas DataFrame
+        Must have columns of: "tof","cps","dcps"
+    lim1 : float
+        lower TOF value limiting average
+    lim2 : float
+        higher TOF value limiting average
+
+    Returns
+    -------
+    notch : array
+        Numpy array with 3 values: avg TOF, avg count rate, error on avg count rate
+    """
+    condition = (spect.tof>lim1) & (spect.tof<lim2)
+    avg = np.mean(spect.cps[condition])
+    avgerr = mt.prop_err_mean(spect.dcps[condition])
+    avgtof = np.mean(spect.tof[condition])
+
+    notch = np.array([avgtof,avg,avgerr])
+    return notch
+
+
+
+
+
+
+
+
+
