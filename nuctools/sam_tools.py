@@ -75,7 +75,7 @@ def read_pds(pds_file):
         if i==1:
             # second line
             reduced_pars = np.array(line.split()).astype(float)
-            print(reduced_pars)
+            print("Reduced pars = ",reduced_pars)
             continue
         if (i-2)%2 == 0:
             # odd lines (as shown in SAMMY manual, but even when 0-indexed)
