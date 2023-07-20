@@ -5,7 +5,7 @@ from . import tof_tools as tt
 from . import funky
 import time
 
-__all__ = ['read_h5cov',
+__all__ = ['read_h5cov','read_pds',
            'print_chann','create_sam_inp','fmt_twenty','fmt_ten','fmt_par',
            'switch_par_flags','describe_norsum_header','LPTtoCOV','mini_cov']
 
@@ -40,6 +40,54 @@ def read_h5cov(filename):
     ucov[idx,idx] /= 2
 
     return ucov,upar,covind,ispup
+
+def read_pds(pds_file):
+    """
+    Read the PDS partial derivative file and load it into a pandas dataframe. 
+
+    Parameters
+    ----------
+    pds_file : str
+        The path to the PDS file
+
+    Returns
+    -------
+    df : DataFrame
+        A pandas data frame, with columns: 
+        "expdata","expunc","theory","dtdp1","dtdp2","dtdp3","dtdp{}",...
+        all the way to the number of parameters used to create the 
+        cross section
+    """
+    with open(pds_file,"r") as f:
+        lines = f.readlines()
+    evenlinesplit = []
+    deriv_table = []
+    pandas_cols = ["expdata","expunc","theory","dtdp1","dtdp2","dtdp3"]
+    for i,line in enumerate(lines):
+        if i==0:
+            # first line
+            numpars = int(line)
+            print("Number of pars = ",numpars)
+            for parnumber in range(4,numpars+1):
+                pandas_cols.append("dtdp{}".format(parnumber))
+            print(pandas_cols)
+            continue
+        if i==1:
+            # second line
+            reduced_pars = np.array(line.split()).astype(float)
+            print(reduced_pars)
+            continue
+        if (i-2)%2 == 0:
+            # odd lines (as shown in SAMMY manual, but even when 0-indexed)
+            evenlinesplit = line.split()
+        if (i-2)%2 == 1:
+            # even lines (as shown in SAMMY manual, but odd when 0-indexed)
+            oddlinesplit = line.split()
+            evenlinesplit.extend(oddlinesplit)
+            newrow = np.array(evenlinesplit).astype(float)
+            deriv_table.append(newrow)
+    df = pd.DataFrame(deriv_table,columns=pandas_cols)
+    return df
 
 def print_chann(cpts,factor,base_width,t0,FP,uncertainty="0.8"):
     """
