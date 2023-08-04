@@ -96,15 +96,18 @@ def get_cross_section(filename,scaleid,temp,mt):
     >>> data = nuc.get_cross_section('n_008016.h5',temperature,scaleid)
 
     """
-    with h5.File(filename,'r+') as f:
+    with h5.File(filename,'r') as f:
         try:
             data = pd.DataFrame({
                 "e" : f['n_{:0>7d}_{:0>6.1f}/mt_{:0>4d}/energy'.format(scaleid,temp,mt)][()],
                 "cs" : f['n_{:0>7d}_{:0>6.1f}/mt_{:0>4d}/xs'.format(scaleid,temp,mt)][()]
             })
         except:
-            print("key = 'n_{:0>7d}_{:0>6.1f}/mt_{:0>4d}' cannot be found".format(mt))
-
+            print("key = 'n_{:0>7d}_{:0>6.1f}/mt_{:0>4d}' cannot be found".format(scaleid,temp,mt))
+            df = pd.DataFrame(f['nuclide_md'][:])
+            print("Temperatures available for SCALEID = {}:".format(scaleid))
+            print(df[df['zaid']==scaleid]['temperature'])
+            raise ValueError("Temperature was not found.")
     return data
 
 
