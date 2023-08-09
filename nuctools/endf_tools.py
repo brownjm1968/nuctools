@@ -1,12 +1,12 @@
 
 import numpy as np
 
-__all__ = ['read_3col_pendf','write_pendf_xs',"endf_float_str",
+__all__ = ['read_pendf_xs','write_pendf_xs',"write_endf_float","read_endf_float",
            "update_file2","setupdict","update_pardict","strip_line_num",
            "loglog_interp"]
 
 
-def read_3col_pendf(file,start,finish):
+def read_pendf_xs(file,start,finish):
     """
     Read part of a PENDF format file.
     
@@ -190,7 +190,7 @@ def write_pendf_xs(filename,energy,cs,mat_num,file_num,reaction_num):
                 f.write(extra_space+"{:d} {:d}  {:d}\n".format(mat_num,file_num,reaction_num))
 
 
-def endf_float_str(value):
+def write_endf_float(value):
     """
     Return the ENDF format string of a floating point number
 
@@ -211,6 +211,28 @@ def endf_float_str(value):
     if( '+0' in valstring ):
         valstring = valstring.replace('+0','-0')
     return valstring
+
+def read_endf_float(string):
+    """
+    Read the ENDF format string of a floating point number and return float
+
+    Parameters
+    ----------
+    string : str
+        A string for a single floating point value
+
+    Returns
+    -------
+    value : float
+        The value for the ENDF string float
+    """
+    if string.strip() == "":
+        return 0.0
+    if "." in string:
+        strsplit = string.split('.')
+        return float(strsplit[0]+"."+strsplit[1].replace("-","e-").replace("+","e+"))
+    else:
+        return float(string)
 
 def update_file2(infile,outfile,energy_dict,mat):
     """
