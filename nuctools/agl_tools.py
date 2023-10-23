@@ -3,7 +3,7 @@ import json
 import numpy as np
 import pandas as pd
 
-__all__ = ['read_and_add','sum_tof']
+__all__ = ['read_and_add','sum_tof','read_rejected']
 
 def read_and_add(filename,hist_df,ecal,llduld,wfcoeff,numadc=4,
                  unweighted=False,verbose=False,mca_df=None,aglgroup=False):
@@ -332,7 +332,48 @@ def sum_tof(agl_inp_file,file_list):
     else:
         return data
 
+def read_rejected(agl_outfile,expid):
+    """
+    Read existing AGL output file for rejected run IDs 
+    and the rejected run, place into string for pyagl
 
+    Parameters
+    ----------
+    agl_outfile : str
+        Full path to AGL report file, typically ending with "*rep.txt"
+    expid : str
+        unique string for run ids, for example "zr91_fp14a" when the 
+        run id strings are "zr91_fp14a_c01_r01", etc.
+
+    Returns
+    -------
+    json_string : str
+        A string in json format that can be copy and pasted into the
+        pyagl input file to match the same behavior as AGL
+
+    Examples
+    --------
+    >>> import nuctools
+    >>> agl_file = "ornl_fp14_WF_Fe50mm_2022_BCoNaS_an_rep.txt"
+    >>> agl_file_path = "/some/dir/"
+    >>> expid = "fe50_fp14a"
+    >>> rejected_string = nuc.read_rejected(agl_file_path+agl_file,expid)
+
+    """
+    with open(agl_outfile,'r') as f:
+        lines = f.readlines()
+    rejected_dict = {}
+    for line in lines:
+        if "Runtime" in line:
+            break
+        if expid in line:
+            runid = line.split()[0]
+            rejected_dict[runid] = []
+        if "rejected" in line:
+            reject_list = line.split()
+            reject_list = np.array(reject_list[1:len(reject_list)]).astype(int).tolist()
+            rejected_dict[runid] = reject_list
+    return json.dumps(rejected_dict,sort_keys=True)
 
 
 
