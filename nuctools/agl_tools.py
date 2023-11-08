@@ -3,9 +3,9 @@ import json
 import numpy as np
 import pandas as pd
 
-__all__ = ['read_and_add','sum_tof','read_rejected']
+__all__ = ['read_and_add','sum_tof','read_rejected','read_ecals','read_gain_adj']
 
-def read_and_add(filename,hist_df,ecal,llduld,wfcoeff,numadc=4,
+def read_and_add(filename,hist_df,ecal,gain,llduld,wfcoeff,numadc=4,
                  unweighted=False,verbose=False,mca_df=None,aglgroup=False):
     """
     TODO: incorporate gain adjustment
@@ -29,6 +29,9 @@ def read_and_add(filename,hist_df,ecal,llduld,wfcoeff,numadc=4,
         parameter `A0,A1,A2`. The number of rows is determined by the number of
         ADCs in the data file. Accessing `A1` for ADC1, e.g., would be: 
         `ecal[0][1]`
+    gain : array-like
+        A 1-d array of gain values, one for every ADC. These are calibrated to match 
+        value for beginning run set to source calibration.
     llduld : array-like
         A 2-dimensional array of N rows and 2 columns. Column 0 represents the 
         lower-level discriminator (LLD) and column 1 the upper-level discriminator
@@ -66,6 +69,7 @@ def read_and_add(filename,hist_df,ecal,llduld,wfcoeff,numadc=4,
                 [ 145.66,6.6452,1],
                 [ 179.75,6.3147,1],
                 [ 56.069,6.3898,1]] # [keV]
+    >>> gain = [1,1,1,1]
     >>> llduld = [[16,1100],
                   [13,1160],
                   [12,1150],
@@ -79,9 +83,10 @@ def read_and_add(filename,hist_df,ecal,llduld,wfcoeff,numadc=4,
             'adc3' : np.zeros(numbins),
             'adc4' : np.zeros(numbins)
         })
-    >>> nuc.read_and_add(filename,data,ecal,llduld,wfcoeff)
+    >>> nuc.read_and_add(filename,data,ecal,gain,llduld,wfcoeff)
 
-    Notes:
+    Notes
+    -----
 
     Formula for the energy calibration is given by:
 
@@ -90,7 +95,10 @@ def read_and_add(filename,hist_df,ecal,llduld,wfcoeff,numadc=4,
     where :math:`PA` is pulse area and :math:`E_d` is in units of keV. The 
     weighting function is given by [1]:
 
-    .. math:: W(E_d) = \\sum_{i=-3}^{4} a_i \\cdot E_d^i 
+    .. math:: W(E_d) = \\sum_{i=-3}^{4} a_i \\cdot E_d^i.
+
+    The :math:`PA` is multiplied by the gain, as calibrated to a calibration source, 
+    and logged during runs.
 
     [1] Borella et. al, The use of C6D6 detectors for neutron induced capture 
     cross-section measurements in the resonance region, Nuclear Instruments and
@@ -114,7 +122,7 @@ def read_and_add(filename,hist_df,ecal,llduld,wfcoeff,numadc=4,
         'tc': np.left_shift((d['tcmsb'] & 0x01FF).astype(np.uint32),16) + d['tclsb'],
     })
     for i in range(1,numadc+1):
-        dat['adc{}'.format(i)] = d['adc{}'.format(i)]
+        dat['adc{}'.format(i)] = d['adc{}'.format(i)].astype(float)
     
     #------------------------
     # Bad TOFs
@@ -142,7 +150,7 @@ def read_and_add(filename,hist_df,ecal,llduld,wfcoeff,numadc=4,
         #------------------------
         temp = temp[['tc','adc{}'.format(i)]][(temp['adc{}'.format(i)]!=0)].reset_index(drop=True).copy()
         #------------------------
-        # save mca before lld and uld cuts (but bin-structure can still cut!)
+        # save mca before lld and uld cuts (but bin-structure can still cut!) and apply gain
         #------------------------
         datdict["mca{}".format(i)] = temp['adc{}'.format(i)]
         #------------------------
@@ -152,13 +160,13 @@ def read_and_add(filename,hist_df,ecal,llduld,wfcoeff,numadc=4,
         #------------------------
         # Calibrate pulse area (PA) to energy deposited [keV]
         #------------------------
-        temp['Ed'] = (ecal[i-1][0] + ecal[i-1][1]*temp['adc{}'.format(i)]**ecal[i-1][2])
+        temp['Ed'] = (ecal[i-1][0] + ecal[i-1][1]*(gain[i-1]*temp['adc{}'.format(i)])**ecal[i-1][2])
         #------------------------
         # apply weighting function to get the weighted counts (coeff are [1/MeV])
         #------------------------
-        temp['Cw'] = wfcoeff[0]*(temp['Ed']/1000)**(-3)
-        for j in range(1,8):
-            temp.Cw += wfcoeff[j]*(temp['Ed']/1000)**(j-3)
+        temp['Cw'] = np.zeros(len(temp['Ed']))
+        for j in range(-3,4):
+            temp.Cw += wfcoeff[j+3]*(temp['Ed']/1000)**(j)
         datdict["d{}".format(i)] = temp
         
     #------------------------
@@ -240,12 +248,13 @@ def sum_tof(agl_inp_file,file_list):
     verbose = agldict['verbose']
     aglgroup = agldict['useAGLgrouping']
     ecal = agldict['ecal']
+    gain_adj = agldict['gain_adj']
     wfcoeff = agldict['wfcoeff']
     bin_width = agldict['bin_width']
     user_max_tof = agldict['max_tof']
     cfct = agldict['cfct']
     zones = agldict['zones']
-    badrundict = agldict['badrundict']
+    rundict = agldict['rundict']
 
 
     print("Total number of files: ",len(file_list))
@@ -301,27 +310,33 @@ def sum_tof(agl_inp_file,file_list):
     # ------------------------------
     # Sum over the files in a folder
     # ------------------------------
+    rundict_keys = np.sort(list(rundict.keys()))
     start = time.time()
-    i,j=0,0
+    i,j,k=0,0,0
     for filename in np.sort(file_list):
         bad_run_found = False
-        for key in badrundict.keys():
+        for key in rundict_keys:
             if key in filename:
-                for bad_run in badrundict[key]:
+                for bad_run in rundict[key]:
                     if( "{:0>4d}".format(bad_run) in filename and key in filename ):
                         j+=1
                         bad_run_found = True
         if(bad_run_found):
             continue
+        # set gain values to proper run
+        for k,key in enumerate(rundict_keys):
+            if key in filename:
+                gain = gain_adj[k]
         if(verbose):
             print("-------------------------\nFile: {}\n-------------------------".format(filename))
+            print("Gain: ",gain)
         if(i==10):
             time_per_file = (time.time()-start)/10
             print("Time/file at 10 files: {:.2f} secs".format(time_per_file))
         if(i==len(file_list)//2):
             print("50% done.")
 
-        read_and_add(filename,data,ecal,llduld,wfcoeff,numadc,unweighted,verbose,mca,aglgroup)
+        read_and_add(filename,data,ecal,gain,llduld,wfcoeff,numadc,unweighted,verbose,mca,aglgroup)
         i+=1
     end = time.time()
     print("    Cycles thrown out: {}/{}".format(j,len(file_list)))
@@ -375,7 +390,85 @@ def read_rejected(agl_outfile,expid):
             rejected_dict[runid] = reject_list
     return json.dumps(rejected_dict,sort_keys=True)
 
+def read_ecals(agl_outfile,numadc,numruns):
+    """
+    Read the energy calibrations for every adc and every run
 
+    Parameters
+    ----------
+    agl_outfile : str
+        Full path to AGL report file, typically ending with "*rep.txt"
+    numadc : int
+        The number of ADCs that were used in the experiment
+    numruns : int
+        The number of runs that have energy calibrations listed. Keep 
+        in mind AGL produces 1 extra listed set of parameters 
+    """
+    with open(agl_outfile,'r') as f:
+        lines = f.readlines()
+    adcsfound = 0
+    runsfound = 0
+    numparam = 3
+    ecal = np.zeros((numruns,numadc,numparam)) # no error catch for def too small
+    # load the ecals for every adc for every run, skip last listed (repeat)
+    for line in lines:
+        # break if extra run found
+        if "1EN_CAL_A0" in line:
+            runsfound+=1
+            if runsfound > numruns:
+                break
+        if "EN_CAL_A0" in line:
+            adc = int(line[0])
+            if adc>adcsfound:
+                adcsfound = adc
+            a0 = float(line.split()[1])
+            ecal[runsfound-1,adc-1,0] = a0
+        if "EN_CAL_A1" in line:
+            adc = int(line[0])
+            if adc>adcsfound:
+                adcsfound = adc
+            a1 = float(line.split()[1])
+            ecal[runsfound-1,adc-1,1] = a1
+        if "EN_CAL_A2" in line:
+            adc = int(line[0])
+            if adc>adcsfound:
+                adcsfound = adc
+            a2 = float(line.split()[1])
+            ecal[runsfound-1,adc-1,2] = a2
+    # test if ADCs is unexpected
+    if adcsfound != numadc:
+        print("ADCs found   = ",adcsfound)
+        print("ADCs defined = ",numadc)
+        raise ValueError("Number of ADCs defined is not equal to ADCs found.")
+    print(ecal)
 
+def read_gain_adj(agl_outfile,numadc,numruns):
+    """
+    Read the pulse area (MCA) gain adjustments for every adc and every run
 
+    Parameters
+    ----------
+    agl_outfile : str
+        Full path to AGL report file, typically ending with "*rep.txt"
+    numadc : int
+        The number of ADCs that were used in the experiment
+    numruns : int
+        The number of runs that have energy calibrations listed. Keep 
+        in mind AGL produces 1 extra listed set of parameters 
+    """
+    with open(agl_outfile,'r') as f:
+        lines = f.readlines()
+    gain_adj = np.zeros((numruns,numadc))
+    runsfound = 0
+    for line in lines:
+        if "1AMP_GAIN_ADJUSTMENT" in line:
+            runsfound += 1
+        if runsfound > numruns:
+            break
+        if "AMP_GAIN_ADJUSTMENT" in line:
+            adc = int(line[0])-1
+            gain = line.split()[1]
+            gain_adj[runsfound-1,adc] = gain
+    np.set_printoptions(precision=5)
+    print(gain_adj)
 

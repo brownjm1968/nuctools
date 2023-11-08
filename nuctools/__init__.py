@@ -15,4 +15,5 @@ from .sample_create import *
 from .scaledata_tools import *
 from .tof_tools import *
 from .trans_tools import *
+from .triton_tools import *
 from .urr_tools import *

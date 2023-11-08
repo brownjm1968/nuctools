@@ -22,6 +22,8 @@
              [0, 1, 1], 
              [0, 1, 1], 
              [0, 0, 0]], 
+    "----------------------------------":" Gain adjustment for pulse area to energy deposited in detector",
+    "gain_adj": [[1.0, 1.0]],
     "----------------------------------":" Weighting function coefficients for a liquid scintillator detector",
     "wfcoeff": [68.7642, -513.402, 1367.75, -1614.66, 993.702, -159.546, 16.571, -0.568438],
     "----------------------------------":" Base bin width in [us]",
@@ -33,7 +35,7 @@
     "----------------------------------":" How many zones to group, we group zones*1024 channels",
     "zones": [0, 10, 4, 4, 4, 4, 4, 6, 28],
     "----------------------------------":" dictionary with keys that are unique to run-specific filename, and lists of bad run #'s",
-    "badrundict": {
+    "rundict": {
         "la_fp4a_t03_r03": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 17, 18, 19, 20, 21, 23, 24, 25, 26, 27, 29, 30,
                             31, 32, 33, 35, 36, 37, 38, 39, 41, 42, 43, 44, 45, 47, 48, 49, 50, 51, 53, 54, 55, 56, 57, 59, 60,
                             61, 62, 63, 65, 66, 67, 68, 69, 71, 72, 73, 74, 75, 77, 78, 79, 80, 81, 83, 84, 85, 86, 87, 89, 90,
