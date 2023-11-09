@@ -152,7 +152,13 @@ def read_and_add(filename,hist_df,ecal,gain,llduld,wfcoeff,numadc=4,
         #------------------------
         # save mca before lld and uld cuts (but bin-structure can still cut!) and apply gain
         #------------------------
-        datdict["mca{}".format(i)] = temp['adc{}'.format(i)]
+        if gain[i-1] == 1.0:
+            datdict["mca{}".format(i)] = temp['adc{}'.format(i)]
+        else:
+            # add uniform rand [0,1) if gain != 1 (prevent non-physical zeros)
+            rnd = np.random.rand(len(temp['adc{}'.format(i)]))
+            temp['adc{}'.format(i)] = gain[i-1]*(temp['adc{}'.format(i)] + rnd)-1
+            datdict["mca{}".format(i)] = temp['adc{}'.format(i)]
         #------------------------
         # apply lower and upper level discriminators
         #------------------------
@@ -160,12 +166,12 @@ def read_and_add(filename,hist_df,ecal,gain,llduld,wfcoeff,numadc=4,
         #------------------------
         # Calibrate pulse area (PA) to energy deposited [keV]
         #------------------------
-        temp['Ed'] = (ecal[i-1][0] + ecal[i-1][1]*(gain[i-1]*temp['adc{}'.format(i)])**ecal[i-1][2])
+        temp['Ed'] = (ecal[i-1][0] + ecal[i-1][1]*(temp['adc{}'.format(i)])**ecal[i-1][2])
         #------------------------
         # apply weighting function to get the weighted counts (coeff are [1/MeV])
         #------------------------
         temp['Cw'] = np.zeros(len(temp['Ed']))
-        for j in range(-3,4):
+        for j in range(-3,4+1):
             temp.Cw += wfcoeff[j+3]*(temp['Ed']/1000)**(j)
         datdict["d{}".format(i)] = temp
         
