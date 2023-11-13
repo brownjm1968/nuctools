@@ -1,7 +1,6 @@
 import pandas as pd
 import numpy as np
 import scipy.integrate as intgr
-from numba import jit
 import time
 from . import physics_tools as pt
 from . import sam_tools as st
