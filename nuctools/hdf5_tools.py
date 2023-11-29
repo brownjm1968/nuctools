@@ -1,9 +1,10 @@
 import numpy as np
 import h5py as h5
+import pandas as pd
 import time
 import warnings
 
-__all__ = ['check_hdf5_triggers']
+__all__ = ['check_hdf5_triggers','read_odfH5']
 
 
 def check_hdf5_triggers(hdf5_folder,sample_name):
@@ -71,5 +72,32 @@ def check_hdf5_triggers(hdf5_folder,sample_name):
         for bad_cycle in bad_cycles:
             print(bad_cycle)
         print("----------------------------")
+
+def read_odfH5(filename):
+    """
+    Read the h5 file produced by SAMMY conversion from ODF to
+    HDF5 format. 
+
+    Parameters
+    ----------
+    filename : str
+        The full file path to the HDF5 file
+
+    Returns
+    -------
+    data,header : DataFrame tuple
+        The experimental data in `data`, and the header info from 
+        the ODF file in `header`
+    """
+    with h5.File(filename,'r') as f:
+        # print(list(f.keys()))
+        data = f['data/sections'][:]
+        colnames = f['data/sectnames'][:]
+        header = f['meta/header'][:]
+    data = pd.DataFrame(data.T,columns=colnames.astype("U13"))
+    header = pd.DataFrame(header)
+    header['key'] = header['key'].astype("U13")
+    return data,header
+
 
 
