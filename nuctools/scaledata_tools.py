@@ -1,11 +1,13 @@
 
 import pandas as pd
 import numpy as np
+import xml.etree.ElementTree as ET
 import h5py as h5
 import matplotlib.pyplot as plt
 
 __all__ = ['plot_h5scale_xs',"get_cross_section","get_std_comp","get_std_comp_nat_abund",
-           "get_zaidlist","write_tsl_table"]
+           "get_zaidlist","write_tsl_table","get_scaleza_name_thermal","get_scaleza_name_metastable",
+           "get_scaleza_name_specialNuclei","append_xml_to_table","get_xml_root"]
 
 def plot_h5scale_xs(filename,scaleid,temp,emin=2.1e7,mt=None):
     """
@@ -260,7 +262,243 @@ def write_tsl_table(library_master_file,output_file,stdcomp):
     tsl_df.columns = header
     tsl_df.to_markdown(output_file,index=False)
 
+def get_xml_root(filename):
+    """
+    Get the XML root object using python xml
 
+    Parameters
+    ----------
+    filename : str
+        The path to the XML file
+
+    Returns
+    -------
+    root : Element
+        The root Element object from ElementTree
+    """
+    tree = ET.parse(filename)
+    root = tree.getroot()
+    return root
+
+def get_scaleza_name_specialNuclei(root,realza,endfmat):
+    """
+    Read XML config file from SCALE data repo and get the SCALEID
+    and ENDF MAT number for nuclei listed under "specialNuclei"
+
+    Parameters
+    ----------
+    root : Element object
+        Element object from an ElementTree object from the python xml 
+        package
+    realza : str
+        string of an int for the ZA of a material in ENDF format
+    endfmat : str
+        string of int for the ENDF MAT number
+
+    Returns
+    -------
+    scaleza, name : tuple
+        A tuple of strings, the SCALEID and the name for SCALE
+
+    Examples
+    --------
+    >>> import nuctools as nuc
+    >>> e80root = nuc.get_xml_root('ENDF-8.0.xml_config')
+    >>> nuc.get_scaleza_name_specialNuclei(e80root,'1001','125')
+    """
+    for child in root:
+        #print(child.tag)
+        if child.tag == 'specialNuclei':
+            for grandchild in child:
+                #print(grandchild.keys())
+                temp_realza = grandchild.get('realza')
+                endf = grandchild.get('endf')
+                #print(temp_realza,endf)
+                if temp_realza == realza and endf == endfmat:
+                    scaleza = grandchild.get('scaleza')
+                    name = grandchild.get('name')
+                    return scaleza,name
+def get_scaleza_name_thermal(root,realza,endfmat):
+    """
+    Read XML config file from SCALE data repo and get the SCALEID
+    and ENDF MAT number for nuclei listed under "thermal"
+
+    Parameters
+    ----------
+    root : Element object
+        Element object from an ElementTree object from the python xml 
+        package
+    realza : str
+        string of an int for the ZA of a material in ENDF format
+    endfmat : str
+        string of int for the ENDF MAT number
+
+    Returns
+    -------
+    scaleza, name : tuple
+        A tuple of strings, the SCALEID and the name for SCALE
+
+    Examples
+    --------
+    >>> import nuctools as nuc
+    >>> e80root = nuc.get_xml_root('ENDF-8.0.xml_config')
+    >>> nuc.get_scaleza_name_thermal(e80root,'126','425')
+    """
+    for child in root:
+        # print(child.tag)
+        if child.tag == 'thermal':
+            for grandchild in child:
+                # print(grandchild.keys())
+                temp_realza = grandchild.get('realza')
+                endf = grandchild.get('endf')
+                # print(temp_realza,endf)
+                if temp_realza == realza and endf == endfmat:
+                    for greatgrandchild in grandchild:
+                        scaleza = greatgrandchild.get('scaleza')
+                        name = greatgrandchild.get('name')
+                        return scaleza,name
+def get_scaleza_name_metastable(root,realza,endfmat):
+    """
+    Read XML config file from SCALE data repo and get the SCALEID
+    and ENDF MAT number for nuclei listed under "metastable"
+
+    Parameters
+    ----------
+    root : Element object
+        Element object from an ElementTree object from the python xml 
+        package
+    realza : str
+        string of an int for the ZA of a material in ENDF format
+    endfmat : str
+        string of int for the ENDF MAT number
+
+    Returns
+    -------
+    scaleza, name : tuple
+        A tuple of strings, the SCALEID and the name for SCALE
+
+    Examples
+    --------
+    >>> import nuctools as nuc
+    >>> e80root = nuc.get_xml_root('ENDF-8.0.xml_config')
+    >>> nuc.get_scaleza_name_metastable(e80root,'61148','6153')
+    """
+    for child in root:
+        # print(child.tag)
+        if child.tag == 'metastable':
+            for grandchild in child:
+                temp_realza = grandchild.get('realza')
+                endf = grandchild.get('endf')
+                # print(temp_realza,endf)
+                if temp_realza == realza and endf == endfmat:
+                    scaleza = grandchild.get('scaleza')
+                    return scaleza
+def append_xml_to_table(table,prot_dict,root,configroot,elibrary,additional_lib=False):
+    """
+    Append row of values of interest for table based on XML files
+
+    Parameters
+    ----------
+    table : DataFrame
+        DataFrame with members: "scaleid","name","gamprod","bondfac","gamxs","elibrary"
+    prot_dict : dict
+        python dictionary associating chemical symbols (e.g. Li) with number of protons
+        (e.g. 3)
+    root : Element
+        root of main XML file listing for SCALE data, make with function `get_xml_root` above
+    configroot : Element
+        root of XML config file, make with function `get_xml_root` above
+    elibrary : str
+        Which endf library name you want to put in the table
+    additional_lib : bool, optional
+        is this the first lib appending to table
+    
+    Returns
+    -------
+    None : None
+        It modifies the table in the input parameter
+
+    """
+    for child in root:
+        za = child.attrib['za']
+        meta = child.attrib['metaStable']
+        endf = child.attrib['endf']
+        awi = child.attrib['awi']
+        if za=='1':
+            continue # skip neutron eval
+        if awi=='0.0':
+            continue # skip photo-atomic
+        
+        # gamma production
+        try:
+            awp0 = child.attrib['AWP0']
+        except:
+            awp0 = "no"
+        # is TSL
+        try:
+            file7 = child.attrib['file7']
+        except:
+            file7 = "no"
+        # is metastable
+        if meta == "true" and file7 == "no":
+            scaleid = get_scaleza_name_metastable(configroot,za,endf)
+        
+        tag = child.attrib['tag']
+        if file7 == "no":
+            name = tag
+            scaleid = za
+        else:
+            scaleid,name = get_scaleza_name_thermal(configroot,za,endf)
+        
+        # special nuclei
+        if za == '1001' and endf == '125':
+            scaleid,name = get_scaleza_name_specialNuclei(configroot,za,endf)
+        if za == '1002' and endf == '128':
+            scaleid,name = get_scaleza_name_specialNuclei(configroot,za,endf)
+    
+        # photo-atomic data (gamma)
+        # ---- if TSL, use first one or 2 letters and map
+        if file7 == "yes":
+            #get za from proton sheet
+            if name[0].lower() == 'h':
+                gamxs = 'h'
+            if name[0].lower() == 'd':
+                gamxs = 'h'
+            if name[0].lower() == 'c':
+                gamxs = 'c'
+            if name[0].lower() == 'n':
+                gamxs = 'n'
+            if name[0].lower() == 'o':
+                gamxs = 'o'
+            if name[0].lower() == 'y':
+                gamxs = 'y'
+            if name[0:2].lower() == 'be':
+                gamxs = 'be'
+            if name[0:2].lower() == 'al':
+                gamxs = 'al'
+            if name[0:2].lower() == 'fe':
+                gamxs = 'fe'
+            if name[0:2].lower() == 'si':
+                gamxs = 'si'
+            if name[0:2].lower() == 'zr':
+                gamxs = 'zr'
+        # ---- else use ZA
+        else:
+            prot = int(za)//1000
+            gamxs = prot_dict[str(prot)].lower()
+            
+        gamprod = awp0
+        if file7 == "yes":
+            gamprod = "yes"
+        bondfac = "yes"
+        if additional_lib:
+            repeat_scaleid = False
+            if scaleid in table['scaleid'].unique():
+                table.loc[table.scaleid==scaleid,'elibrary'] += ", " + elibrary
+            else:
+                table.loc[len(table)] = [scaleid,name,gamprod,bondfac,gamxs,elibrary]
+        else:        
+            table.loc[len(table)] = [scaleid,name,gamprod,bondfac,gamxs,elibrary]
 
 
 
