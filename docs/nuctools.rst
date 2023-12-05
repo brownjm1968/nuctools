@@ -140,6 +140,14 @@ nuctools.trans\_tools module
    :undoc-members:
    :show-inheritance:
 
+nuctools.triton\_tools module
+-----------------------------
+
+.. automodule:: nuctools.triton_tools
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 nuctools.urr\_tools module
 --------------------------
 

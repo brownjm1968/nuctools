@@ -7,7 +7,8 @@ import matplotlib.pyplot as plt
 
 __all__ = ['plot_h5scale_xs',"get_cross_section","get_std_comp","get_std_comp_nat_abund",
            "get_zaidlist","write_tsl_table","get_scaleza_name_thermal","get_scaleza_name_metastable",
-           "get_scaleza_name_specialNuclei","append_xml_to_table","get_xml_root"]
+           "get_scaleza_name_specialNuclei","append_xml_to_table","get_xml_root",
+           "get_fastmat_thermal","get_single_mat"]
 
 def plot_h5scale_xs(filename,scaleid,temp,emin=2.1e7,mt=None):
     """
@@ -227,7 +228,7 @@ def write_tsl_table(library_master_file,output_file,stdcomp):
 
 
     """
-    tsl_table = [['name','scaleid','temps']]
+    tsl_table = [['scaleid','name','temps','**notes**']]
     with h5.File(library_master_file,'r') as f:
         last_scaleid = None
         last_scaleid_pos = 0
@@ -252,7 +253,7 @@ def write_tsl_table(library_master_file,output_file,stdcomp):
                 else:
                     name = stdcomp.name[stdcomp.scaleid==int(scaleid)].to_numpy()[0]
                     temp = str(float(temp))
-                    tsl_table.append([name,str(int(scaleid)),temp])
+                    tsl_table.append([str(int(scaleid)),name,temp,''])
                     last_scaleid_pos += 1
                 last_scaleid = scaleid
     print("Number of TSLs found = ",last_scaleid_pos)
@@ -260,7 +261,62 @@ def write_tsl_table(library_master_file,output_file,stdcomp):
     header = tsl_df.iloc[0]
     tsl_df = tsl_df.iloc[1:len(tsl_df)]
     tsl_df.columns = header
-    tsl_df.to_markdown(output_file,index=False)
+    tsl_df.to_markdown(output_file,tablefmt="grid",index=False,maxcolwidths=[None,None, 45])
+
+def get_single_mat(root,endfmat):
+    """
+    Get the XML root object using python xml
+
+    Parameters
+    ----------
+    root : Element
+        The path to the XML file
+    endfmat : str
+        The ENDF MAT number identifying the element we want
+
+    Returns
+    -------
+    child : Element
+        A child Element object from the root Element
+    """
+    for child in root:
+        endf = child.attrib['endf']
+        if endf == endfmat:
+            return child
+
+def get_fastmat_thermal(root,realza,endfmat):
+    """
+    Read XML config file from SCALE data repo and get the SCALEID
+    and ENDF MAT number for nuclei listed under "thermal" to find
+    the MAT number for fast evaluation
+
+    Parameters
+    ----------
+    root : Element object
+        Element object from an ElementTree object from the python xml 
+        package
+    realza : str
+        string of an int for the ZA of a material in ENDF format
+    endfmat : str
+        string of int for the ENDF MAT number
+
+    Returns
+    -------
+    endf : str
+        The MAT number for the fast evaluation
+    """
+    for child in root:
+        # print(child.tag)
+        if child.tag == 'thermal':
+            for grandchild in child:
+                # print(grandchild.keys())
+                temp_realza = grandchild.get('realza')
+                endf = grandchild.get('endf')
+                # print(temp_realza,endf)
+                if temp_realza == realza and endf == endfmat:
+                    for greatgrandchild in grandchild:
+                        endf = greatgrandchild.get('endf')
+                        return endf
 
 def get_xml_root(filename):
     """
@@ -344,6 +400,7 @@ def get_scaleza_name_thermal(root,realza,endfmat):
     >>> e80root = nuc.get_xml_root('ENDF-8.0.xml_config')
     >>> nuc.get_scaleza_name_thermal(e80root,'126','425')
     """
+    names,scalezas = [],[]
     for child in root:
         # print(child.tag)
         if child.tag == 'thermal':
@@ -356,7 +413,9 @@ def get_scaleza_name_thermal(root,realza,endfmat):
                     for greatgrandchild in grandchild:
                         scaleza = greatgrandchild.get('scaleza')
                         name = greatgrandchild.get('name')
-                        return scaleza,name
+                        scalezas.append(scaleza)
+                        names.append(name)
+                    return scalezas,names
 def get_scaleza_name_metastable(root,realza,endfmat):
     """
     Read XML config file from SCALE data repo and get the SCALEID
@@ -420,6 +479,7 @@ def append_xml_to_table(table,prot_dict,root,configroot,elibrary,additional_lib=
 
     """
     for child in root:
+        scaleids,names=None,None # for thermal
         za = child.attrib['za']
         meta = child.attrib['metaStable']
         endf = child.attrib['endf']
@@ -448,7 +508,7 @@ def append_xml_to_table(table,prot_dict,root,configroot,elibrary,additional_lib=
             name = tag
             scaleid = za
         else:
-            scaleid,name = get_scaleza_name_thermal(configroot,za,endf)
+            scaleids,names = get_scaleza_name_thermal(configroot,za,endf)
         
         # special nuclei
         if za == '1001' and endf == '125':
@@ -456,49 +516,49 @@ def append_xml_to_table(table,prot_dict,root,configroot,elibrary,additional_lib=
         if za == '1002' and endf == '128':
             scaleid,name = get_scaleza_name_specialNuclei(configroot,za,endf)
     
-        # photo-atomic data (gamma)
-        # ---- if TSL, use first one or 2 letters and map
+        # ---- if TSL
         if file7 == "yes":
-            #get za from proton sheet
-            if name[0].lower() == 'h':
-                gamxs = 'h'
-            if name[0].lower() == 'd':
-                gamxs = 'h'
-            if name[0].lower() == 'c':
-                gamxs = 'c'
-            if name[0].lower() == 'n':
-                gamxs = 'n'
-            if name[0].lower() == 'o':
-                gamxs = 'o'
-            if name[0].lower() == 'y':
-                gamxs = 'y'
-            if name[0:2].lower() == 'be':
-                gamxs = 'be'
-            if name[0:2].lower() == 'al':
-                gamxs = 'al'
-            if name[0:2].lower() == 'fe':
-                gamxs = 'fe'
-            if name[0:2].lower() == 'si':
-                gamxs = 'si'
-            if name[0:2].lower() == 'zr':
-                gamxs = 'zr'
-        # ---- else use ZA
+            for i in range(len(scaleids)):
+                scaleid = scaleids[i]
+                name = names[i]
+                fastendf = get_fastmat_thermal(configroot,za,endf)
+                fastelem = get_single_mat(root,fastendf)
+                prot = int(fastelem.attrib['za'])//1000
+                gamxs = prot_dict[str(prot)].lower()
+                gamprod = "yes"
+                bondfac = "yes"
+                if additional_lib:
+                    if scaleid in table['scaleid'].unique():
+                        table.loc[table.scaleid==scaleid,'elibrary'] += ", " + elibrary
+                    else:
+                        # graphite's can still be called using same name
+                        if '6000' in scaleid: 
+                            elib = elibrary + "*"
+                            print(elib)
+                        else:
+                            elib = elibrary
+                        table.loc[len(table)] = [scaleid,name,gamprod,bondfac,gamxs,elib]
+                else:        
+                    table.loc[len(table)] = [scaleid,name,gamprod,bondfac,gamxs,elibrary]
+        # ---- if *not* TSL
         else:
             prot = int(za)//1000
             gamxs = prot_dict[str(prot)].lower()
-            
-        gamprod = awp0
-        if file7 == "yes":
-            gamprod = "yes"
-        bondfac = "yes"
-        if additional_lib:
-            repeat_scaleid = False
-            if scaleid in table['scaleid'].unique():
-                table.loc[table.scaleid==scaleid,'elibrary'] += ", " + elibrary
-            else:
+            gamprod = awp0
+            bondfac = "yes"
+            if additional_lib:
+                if scaleid in table['scaleid'].unique():
+                    table.loc[table.scaleid==scaleid,'elibrary'] += ", " + elibrary
+                else:
+                    # graphite's can still be called using same name
+                    if '6000' in scaleid: 
+                        elib = elibrary + "*"
+                        print(elib)
+                    else:
+                        elib = elibrary
+                    table.loc[len(table)] = [scaleid,name,gamprod,bondfac,gamxs,elib]
+            else:        
                 table.loc[len(table)] = [scaleid,name,gamprod,bondfac,gamxs,elibrary]
-        else:        
-            table.loc[len(table)] = [scaleid,name,gamprod,bondfac,gamxs,elibrary]
 
 
 
