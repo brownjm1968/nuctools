@@ -261,7 +261,7 @@ def write_tsl_table(library_master_file,output_file,stdcomp):
     header = tsl_df.iloc[0]
     tsl_df = tsl_df.iloc[1:len(tsl_df)]
     tsl_df.columns = header
-    tsl_df.to_markdown(output_file,tablefmt="grid",index=False,maxcolwidths=[None,None, 45])
+    tsl_df.to_markdown(output_file,tablefmt="grid",index=False,maxcolwidths=[None,None, 45,None])
 
 def get_single_mat(root,endfmat):
     """
@@ -499,9 +499,6 @@ def append_xml_to_table(table,prot_dict,root,configroot,elibrary,additional_lib=
             file7 = child.attrib['file7']
         except:
             file7 = "no"
-        # is metastable
-        if meta == "true" and file7 == "no":
-            scaleid = get_scaleza_name_metastable(configroot,za,endf)
         
         tag = child.attrib['tag']
         if file7 == "no":
@@ -509,6 +506,10 @@ def append_xml_to_table(table,prot_dict,root,configroot,elibrary,additional_lib=
             scaleid = za
         else:
             scaleids,names = get_scaleza_name_thermal(configroot,za,endf)
+
+        # is metastable
+        if meta == "true" and file7 == "no":
+            scaleid = get_scaleza_name_metastable(configroot,za,endf)
         
         # special nuclei
         if za == '1001' and endf == '125':
