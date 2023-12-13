@@ -1,9 +1,113 @@
 
 import numpy as np
+import pandas as pd
 
-__all__ = ['read_pendf_xs','write_pendf_xs',"write_endf_float","read_endf_float",
+__all__ = ["TAB1",'read_pendf_xs','write_pendf_xs',"write_endf_float","read_endf_float",
            "update_file2","setupdict","update_pardict","strip_line_num",
            "loglog_interp"]
+
+class TAB1:
+    """
+    A class to mimic an ENDF-6 format TAB1 record
+
+    Parameters
+    ----------
+    filename : str
+        The file path to the ENDF file
+    mat : int
+        The ENDF format MAT number
+    mf : int
+        The ENDF format MF number
+    mt : int
+        The ENDF format MT number
+    starting_line_no : int, optional
+        The starting line number of the MAT, MF, and MT
+
+    Attributes
+    ----------
+    interp_table : list
+        The interpolation table; a list of 2-element lists with values of number 
+        of points and interpolation scheme for those points. The sum of number
+        of points should be equal to attribute `np`
+    c1 : float
+        Control record number 1
+    c2 : float
+        Control record number 2
+    l1 : int
+        integer record number 1
+    l2 : int
+        integer record number 1
+    nr : int
+        number of interpolation ranges
+    np : int
+        number of tabulated pairs
+    data : DataFrame
+        A DataFrame with attributes `e` and `cs` for pointwise cross section
+
+    Methods
+    -------
+    read_tab1_cr
+        Read the control record and interpolation tabel for a TAB1
+
+    """
+    def __init__(self,filename,mat,mf,mt,starting_line_no=0):
+        self.mat = mat
+        self.mf = mf
+        self.mt = mt
+        self.filename = filename
+        self.starting_line_no = starting_line_no
+        self.c1 = None
+        self.c2 = None
+        self.l1 = None
+        self.l2 = None
+        self.nr = None
+        self.np = None
+        self.interp_table = []
+
+        self.read_tab1_cr()
+
+        self.data = pd.DataFrame(read_pendf_xs(self.filename,self.starting_line_no,self.ending_line_no).T,
+                                  columns=['e','cs'])
+
+    def read_tab1_cr(self):
+        """ designed for file 3 """
+        start,numlines_nr,numlines_np = 0,0,0
+        read_interp_table = False
+        with open(self.filename,'r') as f:
+            lines = f.readlines()
+        for i,line in enumerate(lines):
+            if i<self.starting_line_no:
+                continue
+            # find starting line
+            if "{:4d}{:2d}{:3d}".format(self.mat,self.mf,self.mt) in line and start==0:
+                start = i+1
+                continue
+            # read control record
+            if i==start and i!=0:
+                self.c1 = read_endf_float(line[0:11])
+                self.c2 = read_endf_float(line[11:22])
+                self.l1 = read_endf_float(line[22:33])
+                self.l2 = read_endf_float(line[33:44])
+                self.nr = read_endf_float(line[44:55])
+                self.np = read_endf_float(line[55:66])
+                numlines_nr = int(self.nr//3)
+                if self.nr%3 > 0: 
+                    numlines_nr +=1
+                numlines_np = int(self.np//3)
+                if self.np%3 > 0:
+                    numlines_np +=1
+                read_interp_table = True
+            if read_interp_table == True and i<=start+numlines_nr and i > start:
+                for j in range(3):
+                    npi = read_endf_float(line[j*22:j*22+11])
+                    inter = read_endf_float(line[j*22+11:j*22+22])
+                    if npi!=0.0 and inter!=0.0:
+                        self.interp_table.append([npi,inter])
+            if self.nr is not None:
+                if i> numlines_nr + start:
+                    break
+        self.starting_line_no = start+3
+        self.ending_line_no = start+2+numlines_np
 
 
 def read_pendf_xs(file,start,finish):
@@ -76,15 +180,12 @@ def read_pendf_xs(file,start,finish):
                         if( word == '           ' ):
                             break_outer = True
                             break # end of TAB1
-                        e.append(word.replace('-','e-').replace('+','e+'))
+                        e.append(read_endf_float(word))
                     else:
                         # -------------------------------
                         # Grab cross section, convert to readable format
                         # -------------------------------
-                        if( word == '           ' ):
-                            break_outer = True
-                            break # end of TAB1
-                        cs.append(word.replace('-','e-').replace('+','e+'))
+                        cs.append(read_endf_float(word))
                     word_start+=word_len
 
             if( break_outer ):
@@ -228,11 +329,13 @@ def read_endf_float(string):
     """
     if string.strip() == "":
         return 0.0
-    if "." in string:
+    elif "e" in string.lower():
+        return float(string)
+    elif "." in string:
         strsplit = string.split('.')
         return float(strsplit[0]+"."+strsplit[1].replace("-","e-").replace("+","e+"))
     else:
-        return float(string)
+        return float(string.replace("-","e-").replace("+","e+"))
 
 def update_file2(infile,outfile,energy_dict,mat):
     """
