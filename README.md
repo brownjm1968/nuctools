@@ -20,25 +20,26 @@ functions to assist in plotting with different styles commonly used at RPI.
 Module `endf_tools.py` provides functions to read and write ENDF/B-VI format 
 pointwise cross section data.
 
---- To Install --------------
+--------------
+## To Install
 
-File structure being:
-
-+ nuctools
-   - docs/
-   - nuctools/
-   - tests/
-   - README.md
-   - LICENSE.md
-   - setup.py
-
-Open a terminal in the top nuctools folder, and execute (I recommend a brew `||` Anaconda installation[^2]):
+`nuctools` can now be installed with `pip`! Simply type:
 
 ```bash
+python -m pip install nuctools
+```
+
+If you'd rather install from the source found in GitHub, open a terminal and type: 
+
+```console
+cd ~/
+git clone https://github.com/brownjm1968/nuctools.git
+cd nuctools
 python -m pip install .
 ```
 
---- To Document -------------
+-------------
+## To Document 
 
 Make sure you have numpydoc and sphinx installed, with `pip` installer:
 
@@ -73,15 +74,10 @@ Note:
 - To build the equations properly you must have LaTeX installed
 - Some packages are required for html, and can be installed with `pip` (e.g. `python -m pip install sphinx`)
 
---- To Test -----------------
+-----------------
+## To Test 
 
-Make sure you have pytest, with anaconda:
-
-```bash
-conda install pytest
-```
-
-or with `pip`:
+Make sure you have pytest, with `pip`:
 
 ```bash
 python -m pip install pytest
@@ -98,6 +94,4 @@ with "test".
 
 
 [^1]: Danon, Yaron. "Design and Construction of the RPI Enhanced Thermal Neutron Target and Thermal Cross Section Measurements of Rare Earth Isotopes.", Doctoral Thesis, RPI, (1993).
-
-[^2]: Note: That I'm giving pip installation commands, if you want anaconda you may have to modify
 
