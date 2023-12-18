@@ -28,16 +28,25 @@ def read_h5cov(filename):
         and a list of 0,1 booleans on whether the parameter was PUP'd
     """
     with h5.File(filename,"r+") as f:
-        uptri_cov = np.array(f['covar'])
+        flatcov = np.array(f['covar'])
         upar = np.array(f['param'])
         covind = np.array(f['covind'])
-        ispup = np.array(f['ispup'])
+        try: 
+            ispup = np.array(f['ispup'])
+        except:
+            ispup = None
+
     lp = len(upar)
-    idx = np.arange(lp)
     ucov = np.zeros((lp,lp))
-    ucov[np.triu_indices(lp)] = uptri_cov
-    ucov += ucov.T
-    ucov[idx,idx] /= 2
+    k = 0
+    for i in range(lp):
+        for j in range(i,lp):
+            ucov[i,j] = flatcov[k]
+            ucov[j,i] = flatcov[k]
+            k+=1
+
+    if ~np.any(ucov == ucov.T):
+        raise ValueError("Covariance matrix is not symmetric!")
 
     return ucov,upar,covind,ispup
 
