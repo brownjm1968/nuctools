@@ -45,7 +45,7 @@ def read_h5cov(filename):
             ucov[j,i] = flatcov[k]
             k+=1
 
-    if ~np.any(ucov == ucov.T):
+    if ~np.all(ucov == ucov.T):
         raise ValueError("Covariance matrix is not symmetric!")
 
     return ucov,upar,covind,ispup
