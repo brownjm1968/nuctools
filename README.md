@@ -22,6 +22,7 @@ pointwise cross section data.
 
 --------------
 ## To Install
+--------------
 
 `nuctools` can now be installed with `pip`! Simply type:
 
@@ -38,8 +39,9 @@ cd nuctools
 python -m pip install .
 ```
 
--------------
-## To Document 
+---------------
+## To Document
+---------------
 
 Make sure you have numpydoc and sphinx installed, with `pip` installer:
 
@@ -76,6 +78,7 @@ Note:
 
 -----------------
 ## To Test 
+-----------------
 
 Make sure you have pytest, with `pip`:
 

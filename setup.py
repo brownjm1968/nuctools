@@ -12,6 +12,7 @@ setup(
     packages=['nuctools'],
     include_package_data=True,
     license='BSD 3-clause',
+    long_description_content_type="text/markdown",
     long_description=open('README.md').read(),
     install_requires=['numpy','pandas','scipy','h5py','pyyaml',
                       'matplotlib','pytest']
