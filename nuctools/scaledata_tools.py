@@ -3,12 +3,17 @@ import pandas as pd
 import numpy as np
 import xml.etree.ElementTree as ET
 import h5py as h5
+import os,sys,json
 import matplotlib.pyplot as plt
+import pkgutil
 
-__all__ = ['plot_h5scale_xs',"get_cross_section","get_std_comp","get_std_comp_nat_abund",
-           "get_zaidlist","write_tsl_table","get_scaleza_name_thermal","get_scaleza_name_metastable",
-           "get_scaleza_name_specialNuclei","append_xml_to_table","get_xml_root",
-           "get_fastmat_thermal","get_single_mat"]
+from . import chem_tools as ct
+from . import physics_tools as pt
+
+__all__ = ['plot_h5scale_xs',"get_cross_section","get_std_comp","get_std_comp_nat_abund","get_zlist",
+           "get_zaidlist","calc_num_densities","write_tsl_table","get_scaleza_name_thermal",
+           "get_scaleza_name_metastable","get_scaleza_name_specialNuclei","append_xml_to_table",
+           "get_xml_root","get_fastmat_thermal","get_single_mat"]
 
 def plot_h5scale_xs(filename,scaleid,temp,emin=2.1e7,mt=None):
     """
@@ -183,6 +188,30 @@ def get_std_comp_nat_abund(datadir):
 
     return stdcomp
 
+def get_zlist(symbol_list):
+    """
+    Get list of proton numbers matching the list of symbols given
+    in the input
+
+    Parameters
+    ----------
+    symbol_list : list
+        A list of strings with elemental symbols (properly caps), 
+        e.g. Am, H, Ca, etc.
+    
+    Returns
+    -------
+    zlist : list
+        A list of ints for the number of protons in each element
+    """
+    zlist = []
+    f_protons = os.path.join(os.path.dirname(__file__),'data','protons.json')
+    with open(f_protons,'r') as f:
+        protons = json.load(f)
+    for symbol in symbol_list:
+        zlist.append(protons[symbol])
+    return zlist
+
 def get_zaidlist(zlist,stdcomp):
     """
     Get the list of ZAIDs, relevant to ENDF/SCALE ID system, using the
@@ -193,7 +222,7 @@ def get_zaidlist(zlist,stdcomp):
     zlist : list
         List of atomic numbers for unique elements in the salt mixture
     stdcomp : DataFrame
-        DataFrame object made exactly like the output of `get_std_comp`
+        DataFrame object made exactly like the output of `get_std_comp_nat_abund`
 
     Returns
     -------
@@ -201,11 +230,89 @@ def get_zaidlist(zlist,stdcomp):
         The list of ZAIDs for the mixture of salts
     """
     zaidlist = []
+    natid = 0.0
     for z in zlist:
-        for za in stdcomp.isoid:
-            if( z == za//1000 ):
+        for i,za in enumerate(stdcomp.isoid):
+            # determine if TSL or metastable (skipping metas!)
+            if stdcomp.natid.iloc[i] != 0:
+                natid = stdcomp.natid.iloc[i]
+            if( z == za//1000 and natid < 1000000):
                 zaidlist.append(za)
     return zaidlist
+
+def calc_num_densities(mol_df,mass,area,scaledatadir):
+    """
+    Calculate number densities for every SCALE ZAID based on 
+    mass fractions of molecules input, mass of sample, and 
+    area of sample
+
+    Parameters
+    ----------
+    mol_df : DataFrame
+        A Pandas DataFrame with column names: "molecule", and "mass_frac"
+        which describe the molecules (with proper capitalization) in the
+        sample and the mass fractions of each molecule. 
+    mass : float
+        The mass of the sample in grams
+    area : float
+        The area of the sample perpendicular to the beam (neutrons) in cm
+    scaledatadir : str
+        The path to the SCALE data directory. (This dependency could be 
+        removed by including a natural abundance file in nuctools in 
+        future releases)
+
+    Returns
+    -------
+    numdensity_iso : dict
+        A dictionary with keys of ZAIDs and values of number density for 
+        every ZAID
+    
+    Example
+    -------
+    >>> import nuctools as nuc
+    >>> import pandas as pd
+    >>> mol = pd.DataFrame({"CaO":0.5,"Fe2O3":0.5})
+    >>> mass = 40 # grams
+    >>> area = 4.5 # cm
+    >>> n = nuc.calc_num_densities(mol,mass,area)
+    """
+    f_protons = os.path.join(os.path.dirname(__file__),'data','protons.json')
+    f_unary_list = os.path.join(os.path.dirname(__file__),'data','unary-list.json')
+    with open(f_unary_list,'r') as f:
+        unary_dict = json.load(f)
+        unary_stoich = unary_dict['unary_stoich']
+        unary_MM = unary_dict['unary_mol_mass']
+    with open(f_protons,'r') as f:
+        protons = json.load(f)
+    stdcomp = get_std_comp_nat_abund(scaledatadir)
+
+    # get unique elements in sample
+    full_elem_list = ct.get_single_elem_list(mol_df.molecule)
+    # get proton numbers for all elements in sample
+    zlist = [protons[el] for el in full_elem_list]
+    # get unique naturally abundant ZAIDs for the elements in sample
+    zaidlist = get_zaidlist(zlist,stdcomp)
+    # initialize number density dict with zeros
+    numdensity_iso = {}
+    for zaid in zaidlist:
+        numdensity_iso[zaid] = 0.0
+
+    # --- molecule loop
+    for i,molec in enumerate(mol_df.molecule):
+        MF_mol = mol_df.mass_frac.iloc[i]
+        MM_mol = unary_MM[molec]
+        elem_list = ct.get_single_elem_list([molec])
+        molec_stoich = unary_stoich[molec]
+        # --- elements in molecule loop
+        for j,elem in enumerate(elem_list):
+            z = protons[elem]
+            s_elem = molec_stoich[j]
+            elem_zaidlist = get_zaidlist([z],stdcomp)
+            # --- isotopes in element loop
+            for zaid in elem_zaidlist:
+                gamma_iso = 0.01 * stdcomp.loc[stdcomp.isoid==zaid].frac.iloc[0]
+                numdensity_iso[zaid] += gamma_iso * s_elem * MF_mol * mass * pt.Na / area / MM_mol
+    return numdensity_iso
 
 def write_tsl_table(library_master_file,output_file,stdcomp):
     """

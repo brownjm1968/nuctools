@@ -10,6 +10,7 @@ setup(
     author="Jesse Brown",
     author_email="brownjm1968@gmail.com",
     packages=['nuctools'],
+    include_package_data=True,
     license='BSD 3-clause',
     long_description=open('README.md').read(),
     install_requires=['numpy','pandas','scipy','h5py','pyyaml',

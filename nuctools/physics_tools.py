@@ -7,6 +7,7 @@ import pandas as pd
 hbar = 6.582119514e-16 # [eV-s] NIST Planck's over 2 pi
 mnc2 = 939565413.3  # NIST neutron mass [eV]
 c = 299.792458      # NIST speed of light [m/us]
+Na = 6.02214076e23  # NIST Avogadro's num. [1/mol]
 # -----------------------------------------------------------------------------
 
 __all__ = ['pole_strength',

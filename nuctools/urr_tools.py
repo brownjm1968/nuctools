@@ -7,11 +7,6 @@ from pathlib import Path
 from . import funky as fk 
 from . import sam_tools as st
 
-
-
-
-
-
 __all__ = ["sesh_fitacs","write_pars_fitacs","apply_sesh_corr",
            "write_sesh_pars","read_fitacs_par","create_new_sesh_mcfile"]
 
