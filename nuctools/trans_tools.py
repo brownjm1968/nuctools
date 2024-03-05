@@ -4,7 +4,7 @@ from . import tof_tools as tt
 from . import math_tools as mt
 from . import sam_tools as st
 
-__all__ = ['Trans','calc_cov','write_covar_file','read_covar_file', 'write_sammy_idc_file']
+__all__ = ['Trans','calc_cov','write_covar_file','read_covar_file']
 
 # TODO: create sample/open objects
 
@@ -817,99 +817,6 @@ def read_covar_file(filename,stat_err_cols,sys_der_cols,stat_der_cols,corr_sys_i
     
     return E,observable,unc_observable,cy
 
-def write_sammy_idc_file(filepath,name,energy,t,dt,stat,syst,sys_der_list,high_precision=False):
-    """
-    Write a file with the information requested by the SAMMY code for calculating covariance.
-    This function will also write the "data file" needed by SAMMY
 
-    Parameters
-    ----------
-    filename : str
-        The full file path to the file that is being written to
-    energy : array
-        The 1-d vector of energy. This should be the same length as all
-        the other pointwise quantities given.
-    t : array-like
-        The observable, in this case transmission. Should be the same length as
-        energy
-    dt : array-like
-        The uncertainty on the observable (for convenience). Should be the same
-        length as energy, and should be the diagonal of the total covariance matrix.
-    stat : array-like
-        The statistical covariance matrix, can be 2-d or 1-d as only the diagonal is
-        non-zero.
-    syst : array-like
-        The user can provide the systematic covariance matrix here. It should be 
-        noted that **care must be taken to ensure the order of the covariance matches
-        the order of derivatives given in sys_der_list**. 
-    sys_der_list : array-like
-        Each vector in this list is the derivative of the function with 
-        respect to that variable. **This is the Jacobian, and the order
-        of the derivatives must be the same as the order given in the 
-        covariance matrix syst**. 
-    high_precision : bool, optional
-        If the precision written to the file is too low (default 1e-6), write
-        the floats with higher precision (1e-12).
-
-    Returns
-    -------
-    none : ascii file
-        Returns a somewhat annotated file with all the information necessary to
-        reproduce the point-by-point covariance of the function. This output file
-        is readable by read_covar_file().
-
-
-    """
-    def sixe(x):
-        return '{:10.6e}'.format(x)
-    if high_precision:
-        def sixe(x):
-            return '{:10.12e}'.format(x)
-    
-    # --- Data file ---
-    st.fmt_twenty([energy,t,dt],filepath+name+'.twenty')
-
-    # --- IDC file ---
-    if len(np.shape(stat))>1:
-        stat_err = np.sqrt(np.diag(stat))
-    else:
-        stat_err = np.sqrt(stat)
-    with open(filepath+name+'.idc','w+') as f:
-        f.write('Number of data-reduction parameters = '+str(len(sys_der_list))+'\n')
-        f.write('\n')
-        f.write('Free-format partial derivatives\n')
-        for i in range(len(sys_der_list[0])):
-            f.write(sixe(energy[i])+' '+sixe(stat_err[i])+' ')
-            for j in range(len(sys_der_list)):
-                f.write(sixe(sys_der_list[j][i]))
-                if j != len(sys_der_list)-1:
-                    f.write(' ')
-            f.write('\n')
-        f.write('\n')
-        f.write('uncertainties on data-reduction parameters\n')
-        for i,err in enumerate(np.sqrt(np.diag(syst))):
-            f.write(sixe(err))
-            if i != len(syst)-1:
-                f.write(' ')
-        f.write('\n')
-        f.write('\n')
-        
-        off_diagonal = False
-        if ( (np.eye(len(syst))*syst - syst).any() > 0):
-            off_diagonal = True
-            syst_corr = mt.cov_to_corr(syst)
-        if off_diagonal:
-            f.write('Correlation for data-reduction parameters\n')
-            for i,row in enumerate(syst_corr):
-                if i==0:
-                    continue
-                for j,elem in enumerate(row):
-                    if j==i:
-                        break
-                    f.write(sixe(elem))
-                    if j != len(row)-1:
-                        f.write(' ')
-                f.write('\n')
-        f.write('\n')
 
 
