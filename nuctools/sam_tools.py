@@ -6,12 +6,12 @@ from . import math_tools as mt
 from . import funky
 import time
 
-__all__ = ['read_h5cov','read_pds','write_sammy_idc_file',
+__all__ = ['read_h5rpcm','read_h5xscm','read_pds','write_sammy_idc_file',
            'print_chann','create_sam_inp','fmt_twenty','fmt_ten','fmt_par',
            'switch_par_flags','describe_norsum_header','LPTtoCOV','mini_cov']
 
 
-def read_h5cov(filename):
+def read_h5rpcm(filename):
     """
     New SAMMY covariance file is in HDF5 in the form of an upper 
     triangular matrix. Return covariance, parameters, etc.
@@ -50,6 +50,45 @@ def read_h5cov(filename):
         raise ValueError("Covariance matrix is not symmetric!")
 
     return ucov,upar,covind,ispup
+
+
+def read_h5xscm(filename):
+    """
+    New SAMMY XS covariance file is in HDF5 in the form of a lower
+    triangular matrix (different than RPCM above!). Return cross section
+    covariance
+
+    Parameters
+    ----------
+    filename : str
+        The name of the full file path to the H5 covariance file
+    Returns
+    -------
+    xscov : array-like
+        The 2-d symmetric array of covariance on the theoretical observable
+        in SAMMY.
+    """
+
+    with h5.File(filename,"r+") as f:
+        try: 
+            flatxscov = np.array(f['xs_cov'])
+        except:
+            flatxscov = None
+    
+    lxc = len(flatxscov)
+    lp = int(np.floor(np.sqrt(1+8*lxc)-1)/2)
+    xscov = np.zeros((lp,lp))
+    k = 0
+    for i in range(lp):
+        for j in range(0,i+1):
+            xscov[i,j] = flatxscov[k]
+            xscov[j,i] = flatxscov[k]
+            k+=1
+
+    if ~np.all(xscov == xscov.T):
+        raise ValueError("Covariance matrix is not symmetric!")
+
+    return xscov
 
 def read_pds(pds_file):
     """

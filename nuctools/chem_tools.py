@@ -1,6 +1,15 @@
-import re
+import re,os,json
 
-__all__ = ['get_single_elem_list']
+__all__ = ['get_protons','get_single_elem_list']
+
+def get_protons(chem_symbol):
+    """
+    """
+    f_protons = os.path.join(os.path.dirname(__file__),'data','protons.json')
+    with open(f_protons,'r') as f:
+        protons = json.load(f)
+    
+    return protons[chem_symbol]
 
 def get_single_elem_list(unary_salts):
     """
