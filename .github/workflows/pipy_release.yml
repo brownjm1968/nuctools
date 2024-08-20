@@ -38,6 +38,23 @@ jobs:
         python -m pip install .
     - name: Test
       run: pytest
+  build-and-test-windows:
+    name: Build and test the package on windows
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@master
+    - name: Set up Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.x'
+    - name: Install pypa/setuptools
+      run: |
+        (Get-Content setup.py).replace('{{VERSION_PLACEHOLDER}}', '1.4.0') | Set-Content setup.py
+        python -m pip install wheel setuptools
+        python -m pip install .
+        
+    - name: Test
+      run: pytest
   publish:
     name: Build and publish Python 🐍 distributions 📦 to PyPI
     if: startsWith(github.ref, 'refs/tags/')
