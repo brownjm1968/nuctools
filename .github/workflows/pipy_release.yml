@@ -52,7 +52,7 @@ jobs:
         python-version: '3.x'
     - name: Install pypa/setuptools
       run: |
-        (Get-Content setup.py).replace('{{VERSION_PLACEHOLDER}}', '$env:MASTER_VERSION') | Set-Content setup.py
+        (Get-Content setup.py).replace('{{VERSION_PLACEHOLDER}}', $env:MASTER_VERSION) | Set-Content setup.py
         python -m pip install wheel setuptools
         python -m pip install .
     - name: Test
