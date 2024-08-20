@@ -583,7 +583,7 @@ The ``sammy`` program can be obtained from the `ORNL sammy website <https://code
 This open-source ``sammy`` program requires SCALE file to compile until the open-source version of 
 AMPX is available. The ``sesh`` program can be obtained from
  `Jesses GitHub page <https://github.com/brownjm1968/sesh>`_. ``sesh`` is a stand-alone Fortran code
- and does not require any supporting software. 
+ and does not require any supporting software.  SESH is now incorporated into SAMMY by Alec Golas. 
  
 
 

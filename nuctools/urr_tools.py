@@ -15,6 +15,8 @@ def sesh_fitacs(inp_file_name,data):
     """
     This function performs the iteration loop for SESH and FITACS
 
+    !! This is deprecated since A. Golas implemented SESH into SAMMY !!
+
     SESH and FITACS are used together to correct experimental 
     cross section data and fit that data, respectively. Both 
     programs require average resonance parameters and to use them
