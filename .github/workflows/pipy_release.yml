@@ -27,7 +27,7 @@ jobs:
       with:
         python-version: '3.x'
     - name: Install pypa/setuptools
-      run: >-
+      run: |
         python -m pip install wheel setuptools
         python -m pip install .
     - name: Test
