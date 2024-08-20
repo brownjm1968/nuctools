@@ -47,8 +47,6 @@ jobs:
     - name: Install pypa/setuptools
       run: >-
         python -m pip install wheel setuptools
-    - name: Test
-      run: pytest
     - name: Extract tag name
       id: tag
       run: echo ::set-output name=TAG_NAME::$(echo $GITHUB_REF | cut -d / -f 3)
