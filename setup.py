@@ -1,5 +1,7 @@
 from setuptools import setup, find_packages
 
+# set the __version__
+exec(open('nuctools/_version.py').read())
 
 setup(
     name='nuctools',
