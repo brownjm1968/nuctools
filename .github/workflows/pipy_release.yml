@@ -33,7 +33,7 @@ jobs:
         python-version: '3.x'
     - name: Install pypa/setuptools
       run: |
-        sed -i "s/{{VERSION_PLACEHOLDER}}/1.4.0/g" setup.py
+        sed -i -e "s/{{VERSION_PLACEHOLDER}}/1.4.0/g" setup.py
         python -m pip install wheel setuptools
         python -m pip install .
     - name: Test
