@@ -15,15 +15,15 @@ on:
       - master
     tags:
       - '*'
-  strategy:
-    matrix:
-      os:
-        - macos-latest
-        - ubuntu-latest
 
 jobs:
   build-and-test:
     name: Build and test the package
+    strategy:
+      matrix:
+        os:
+          - macos-latest
+          - ubuntu-latest
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@master
