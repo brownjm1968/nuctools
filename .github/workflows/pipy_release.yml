@@ -16,6 +16,9 @@ on:
     tags:
       - '*'
 
+env:
+  MASTER_VERSION: 1.4.4 # the version we set for master in github. PyPI is set from tag name
+
 jobs:
   build-and-test:
     name: Build and test the package
@@ -33,7 +36,7 @@ jobs:
         python-version: '3.x'
     - name: Install pypa/setuptools
       run: |
-        sed -i -e "s/{{VERSION_PLACEHOLDER}}/1.4.0/g" setup.py
+        sed -i -e "s/{{VERSION_PLACEHOLDER}}/$MASTER_VERSION/g" setup.py
         python -m pip install wheel setuptools
         python -m pip install .
     - name: Test
@@ -49,7 +52,7 @@ jobs:
         python-version: '3.x'
     - name: Install pypa/setuptools
       run: |
-        (Get-Content setup.py).replace('{{VERSION_PLACEHOLDER}}', '1.4.0') | Set-Content setup.py
+        (Get-Content setup.py).replace('{{VERSION_PLACEHOLDER}}', '$MASTER_VERSION') | Set-Content setup.py
         python -m pip install wheel setuptools
         python -m pip install .
     - name: Test

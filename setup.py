@@ -19,7 +19,7 @@ setup(
     license='BSD 3-clause',
     url='https://github.com/brownjm1968/nuctools',
     long_description_content_type="text/markdown",
-    long_description=open('README.md').read(),
+    long_description=long_description,
     install_requires=['numpy','pandas','scipy','h5py','pyyaml',
                       'matplotlib','pytest'],
     classifiers=[
