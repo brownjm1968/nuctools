@@ -52,7 +52,6 @@ jobs:
         (Get-Content setup.py).replace('{{VERSION_PLACEHOLDER}}', '1.4.0') | Set-Content setup.py
         python -m pip install wheel setuptools
         python -m pip install .
-        
     - name: Test
       run: pytest
   publish:
