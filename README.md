@@ -1,3 +1,5 @@
+![CI-CD](https://github.com/brownjm1968/nuctools/actions/workflows/pipy_release.yml/badge.svg)
+
 Nuctools is a python package which was initially intended to assist with reduction
 of data taken at the RPI linear accelerator, and was significantly influenced by 
 technical expertise and advice from Yaron Danon and other RPI research staff. It 
