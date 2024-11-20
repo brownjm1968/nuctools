@@ -28,6 +28,14 @@ nuctools.ampx\_tools module
    :undoc-members:
    :show-inheritance:
 
+nuctools.chem\_tools module
+---------------------------
+
+.. automodule:: nuctools.chem_tools
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 nuctools.endf\_tools module
 ---------------------------
 
