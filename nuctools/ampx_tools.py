@@ -48,7 +48,7 @@ def read_tab1_ascii(filename,mat,mf,mt,minus1=False):
             end -= 1
         # now on line after match
         try:
-            tab1 = pd.read_csv(filename,skiprows=skip,nrows=end,names=['e','cs'],delim_whitespace=True)
+            tab1 = pd.read_csv(filename,skiprows=skip,nrows=end,names=['e','cs'],sep=r'\s+')
         except pd.errors.ParserError as err:
             print("string to match: \"{}\"".format(string_to_match))
             print("lines to skip: ",skip)

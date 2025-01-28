@@ -229,8 +229,8 @@ class Trans:
             # -----------------------------------------------------------------
             # ---- read in optgroup files that have already been grouped ------
             # -----------------------------------------------------------------
-            self.open_data   = pd.read_csv(open_data_name  ,delim_whitespace=True,names=self.datafile_names)
-            self.sample_data = pd.read_csv(sample_data_name,delim_whitespace=True,names=self.datafile_names)
+            self.open_data   = pd.read_csv(open_data_name  ,sep=r'\s+',names=self.datafile_names)
+            self.sample_data = pd.read_csv(sample_data_name,sep=r'\s+',names=self.datafile_names)
         elif optstat_group == True:
             # -----------------------------------------------------------------
             # ---- group by "optimum statistics" ------------------------------
@@ -241,9 +241,9 @@ class Trans:
             # ---- reset the column names -------------------------------------------------
             self.datafile_names = ['ch','counts','dcounts']
             # ---- read in the fixed bin width data ---------------------------------------
-            ug_open_data = pd.read_csv(open_data_name,delim_whitespace=True,names=self.datafile_names,
+            ug_open_data = pd.read_csv(open_data_name,sep=r'\s+',names=self.datafile_names,
                                          skiprows=14)
-            ug_samp_data = pd.read_csv(sample_data_name,delim_whitespace=True,names=self.datafile_names,
+            ug_samp_data = pd.read_csv(sample_data_name,sep=r'\s+',names=self.datafile_names,
                                          skiprows=14)
             # ---- read in the bin width --------------------------------------------------
             open_bw = np.genfromtxt(open_data_name  ,unpack=True,skip_header=12,max_rows=1)
@@ -263,9 +263,9 @@ class Trans:
             # ---- reset the column names -------------------------------------------------
             self.datafile_names = ['ch','counts','dcounts']
             # ---- read in the fixed bin width data ---------------------------------------
-            ug_open_data   = pd.read_csv(open_data_name,delim_whitespace=True,names=self.datafile_names,
+            ug_open_data   = pd.read_csv(open_data_name,sep=r'\s+',names=self.datafile_names,
                                          skiprows=14)
-            ug_samp_data = pd.read_csv(sample_data_name,delim_whitespace=True,names=self.datafile_names,
+            ug_samp_data = pd.read_csv(sample_data_name,sep=r'\s+',names=self.datafile_names,
                                          skiprows=14)
             # ---- read in the bin width --------------------------------------------------
             open_bw = np.genfromtxt(open_data_name  ,unpack=True,skip_header=12,max_rows=1)

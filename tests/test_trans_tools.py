@@ -10,9 +10,9 @@ def test_Trans():
 	oMon_file_name = os.getcwd() + '/tests/test_files/test_Mon_open.dat'
 	sMon_file_name = os.getcwd() + '/tests/test_files/test_Mon_samp.dat'
 
-	odat = pd.read_csv(open_file_name,delim_whitespace=True,
+	odat = pd.read_csv(open_file_name,sep=r'\s+',
 		               names=['tof','bin_width','counts'])
-	sdat = pd.read_csv(samp_file_name,delim_whitespace=True,
+	sdat = pd.read_csv(samp_file_name,sep=r'\s+',
 		               names=['tof','bin_width','counts'])
 	omon = pd.read_csv(oMon_file_name,names=['mon'])
 	smon = pd.read_csv(sMon_file_name,names=['mon'])

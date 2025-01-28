@@ -225,21 +225,21 @@ FITACS data files into DataFrames and adding them to a list is given below ::
 
     >>> folder = '/Users/jesse/data/'
     >>> 
-    >>> totxs_ta1 = pd.read_csv(folder+"ta1_sig.dat",skiprows=2,names=['e','cs','dcs'],delim_whitespace=True)
-    >>> trans_ta1 = pd.read_csv(folder+"ta1_trans.dat",names=['e','t','dt'],delim_whitespace=True)
+    >>> totxs_ta1 = pd.read_csv(folder+"ta1_sig.dat",skiprows=2,names=['e','cs','dcs'],sep=r'\s+')
+    >>> trans_ta1 = pd.read_csv(folder+"ta1_trans.dat",names=['e','t','dt'],sep=r'\s+')
     >>> data1 = pd.concat([totxs_ta1,trans_ta1[['t','dt']]],axis=1)
     >>> 
-    >>> totxs_ta3 = pd.read_csv(folder+"ta3_sig.dat",skiprows=2,names=['e','cs','dcs'],delim_whitespace=True)
-    >>> trans_ta3 = pd.read_csv(folder+"ta3_trans.dat",names=['e','t','dt'],delim_whitespace=True)
+    >>> totxs_ta3 = pd.read_csv(folder+"ta3_sig.dat",skiprows=2,names=['e','cs','dcs'],sep=r'\s+')
+    >>> trans_ta3 = pd.read_csv(folder+"ta3_trans.dat",names=['e','t','dt'],sep=r'\s+')
     >>> data3 = pd.concat([totxs_ta3,trans_ta3[['t','dt']]],axis=1)
     >>> 
-    >>> totxs_ta6 = pd.read_csv(folder+"ta6_sig.dat",skiprows=2,names=['e','cs','dcs'],delim_whitespace=True)
-    >>> trans_ta6 = pd.read_csv(folder+"ta6_trans.dat",names=['e','t','dt'],delim_whitespace=True)
+    >>> totxs_ta6 = pd.read_csv(folder+"ta6_sig.dat",skiprows=2,names=['e','cs','dcs'],sep=r'\s+')
+    >>> trans_ta6 = pd.read_csv(folder+"ta6_trans.dat",names=['e','t','dt'],sep=r'\s+')
     >>> data6 = pd.concat([totxs_ta6,trans_ta6[['t','dt']]],axis=1)
     >>> 
-    >>> capxs_ta1 = pd.read_csv(folder+"capxs_ta1.dat",skiprows=2,names=['e','cs','dcs'],delim_whitespace=True)
+    >>> capxs_ta1 = pd.read_csv(folder+"capxs_ta1.dat",skiprows=2,names=['e','cs','dcs'],sep=r'\s+')
     >>> 
-    >>> capxs_ta2 = pd.read_csv(folder+"capxs_ta2.dat",skiprows=2,names=['e','cs','dcs'],delim_whitespace=True)
+    >>> capxs_ta2 = pd.read_csv(folder+"capxs_ta2.dat",skiprows=2,names=['e','cs','dcs'],sep=r'\s+')
     >>> 
     >>> data = [data1,data3,data6,capxs_ta1,capxs_ta2]
 

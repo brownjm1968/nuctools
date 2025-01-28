@@ -49,20 +49,20 @@ def sesh_fitacs(inp_file_name,data):
     --------
     >>> xs_col = ['e','cs','dcs']
     >>> tr_col = ['e','t','dt']
-    >>> totxs_ta1 = pd.read_csv("ta1_sig.dat"  ,names=xs_col,delim_whitespace=True)
-    >>> trans_ta1 = pd.read_csv("ta1_trans.dat",names=tr_col,delim_whitespace=True)
+    >>> totxs_ta1 = pd.read_csv("ta1_sig.dat"  ,names=xs_col,sep=r'\s+')
+    >>> trans_ta1 = pd.read_csv("ta1_trans.dat",names=tr_col,sep=r'\s+')
     >>> data1 = pd.concat([totxs_ta1,trans_ta1[['t','dt']]],axis=1)
     >>>
-    >>> totxs_ta3 = pd.read_csv("ta3_sig.dat"  ,names=xs_col,delim_whitespace=True)
-    >>> trans_ta3 = pd.read_csv("ta3_trans.dat",names=tr_col,delim_whitespace=True)
+    >>> totxs_ta3 = pd.read_csv("ta3_sig.dat"  ,names=xs_col,sep=r'\s+')
+    >>> trans_ta3 = pd.read_csv("ta3_trans.dat",names=tr_col,sep=r'\s+')
     >>> data3 = pd.concat([totxs_ta3,trans_ta3[['t','dt']]],axis=1)
     >>>
-    >>> totxs_ta6 = pd.read_csv("ta6_sig.dat"  ,names=xs_col,delim_whitespace=True)
-    >>> trans_ta6 = pd.read_csv("ta6_trans.dat",names=tr_col,delim_whitespace=True)
+    >>> totxs_ta6 = pd.read_csv("ta6_sig.dat"  ,names=xs_col,sep=r'\s+')
+    >>> trans_ta6 = pd.read_csv("ta6_trans.dat",names=tr_col,sep=r'\s+')
     >>> data6 = pd.concat([totxs_ta6,trans_ta6[['t','dt']]],axis=1)
     >>>
-    >>> capxs_ta1 = pd.read_csv("capxs_ta1.dat",names=xs_col,delim_whitespace=True)
-    >>> capxs_ta2 = pd.read_csv("capxs_ta2.dat",names=xs_col,delim_whitespace=True)
+    >>> capxs_ta1 = pd.read_csv("capxs_ta1.dat",names=xs_col,sep=r'\s+')
+    >>> capxs_ta2 = pd.read_csv("capxs_ta2.dat",names=xs_col,sep=r'\s+')
     >>>
     >>> data = [data1,data3,data6,capxs_ta1,capxs_ta2]
     >>> 
@@ -191,9 +191,9 @@ def sesh_fitacs(inp_file_name,data):
             if iteration > 0:
                 prev_corr_file = sesh_outdir+inp['sesh_cor']+'_e{}_it{}'.format(e,iteration-1)
                 colnames = ['e','avtot','avcap','sscf','davtot','davcap','dsscf','thick','samp_type']
-                current = pd.read_csv(temp_corr_file,delim_whitespace=True,
+                current = pd.read_csv(temp_corr_file,sep=r'\s+',
                                       names=colnames,header=0)
-                previous = pd.read_csv(prev_corr_file,delim_whitespace=True,
+                previous = pd.read_csv(prev_corr_file,sep=r'\s+',
                                        names=colnames,header=0)
                 
                 mean_change = np.mean(abs(current.sscf-previous.sscf)/previous.sscf)
@@ -471,7 +471,7 @@ def apply_sesh_corr(cor_file,data,N,capture=True):
     # cast data to numpy 
     data = np.array(data)
     # read in the correction factor file
-    sesh = pd.read_csv(cor_file,delim_whitespace=True,names=colnames,
+    sesh = pd.read_csv(cor_file,sep=r'\s+',names=colnames,
                        header=0,float_precision='round_trip') 
     sesh = sesh[sesh.thick == N]
     
@@ -629,15 +629,15 @@ def read_fitacs_par(filename,num_e_regions=1,max_orb_ang_mom=2):
                 # choose element to fill
                 pos = region*3 + L
                 # set the values
-                pars.L[pos]       = L
-                pars.D[pos]       = D
-                pars.eregion[pos] = region
-                pars.stren[pos]   = float(line[0:10])
-                pars.dstren[pos]  = float(line[10:20])
-                pars.dist_R[pos]  = float(line[20:30])
-                pars.ddist_R[pos] = float(line[30:40])
-                pars.gam_g[pos]   = float(line[40:50])
-                pars.dgam_g[pos]  = float(line[50:60])
+                pars.at[pos,'L']       = L
+                pars.at[pos,'D']       = D
+                pars.at[pos,'eregion'] = region
+                pars.at[pos,'stren']   = float(line[0:10])
+                pars.at[pos,'dstren']  = float(line[10:20])
+                pars.at[pos,'dist_R']  = float(line[20:30])
+                pars.at[pos,'ddist_R'] = float(line[30:40])
+                pars.at[pos,'gam_g']   = float(line[40:50])
+                pars.at[pos,'dgam_g']  = float(line[50:60])
                 
                 # increment the orbital ang momentum value
                 L += 1

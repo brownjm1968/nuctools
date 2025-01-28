@@ -31,7 +31,7 @@ def read_depletion_history(triton_inp):
     if skip_lines == 0 and num_lines == 0:
         raise ValueError("Could not find burndata in input file")
 
-    history = pd.read_csv(triton_inp,skiprows=skip_lines,nrows=num_lines,delim_whitespace=True,
+    history = pd.read_csv(triton_inp,skiprows=skip_lines,nrows=num_lines,sep=r'\s+',
                           names=['power','burn','str','down','nlib','end'])
     history['power'] = history.power.str.replace('power=','').astype(float)
     history['burn'] = history.burn.str.replace('burn=','').astype(float)

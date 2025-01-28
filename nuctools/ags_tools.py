@@ -70,7 +70,7 @@ class ags:
         """
         cp = np.array(comp_pt)
         cf = 2**np.array(comp_fct)
-        #hist = pd.read_csv(filename,delim_whitespace=True,names=['bin','counts'])
+        #hist = pd.read_csv(filename,sep=r'\s+',names=['bin','counts'])
         hist = pd.DataFrame({
             'counts'    : spectrum,
             'dtof' : np.zeros(len(spectrum))

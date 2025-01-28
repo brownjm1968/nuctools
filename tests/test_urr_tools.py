@@ -9,8 +9,8 @@ def test_apply_sesh_corr():
     directory = os.getcwd() + '/tests/test_files/'
 
     totxs_ta1 = pd.read_csv(directory+"test_tot_xs.dat",skiprows=2,
-                            names=['e','cs','dcs'],delim_whitespace=True)
-    trans_ta1 = pd.read_csv(directory+"test_trans.dat",names=['e','t','dT'],delim_whitespace=True)
+                            names=['e','cs','dcs'],sep=r'\s+')
+    trans_ta1 = pd.read_csv(directory+"test_trans.dat",names=['e','t','dT'],sep=r'\s+')
 
     N = 0.1
 
