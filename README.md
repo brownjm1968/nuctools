@@ -32,7 +32,11 @@ pointwise cross section data.
 python -m pip install nuctools
 ```
 
-If you'd rather install from the source found in GitHub, open a terminal and type: 
+<p>
+<details>
+<summary>If you'd rather install from the source found in GitHub</summary>: 
+
+Note: not recommended! Set version in `setup.py`, open a terminal and type: 
 
 ```console
 cd ~/
@@ -40,6 +44,8 @@ git clone https://github.com/brownjm1968/nuctools.git
 cd nuctools
 python -m pip install .
 ```
+</details>
+</p>
 
 ---------------
 ## To Document

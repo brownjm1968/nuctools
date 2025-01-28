@@ -76,6 +76,8 @@ def modify_sdef(source,mcnp_file_name,si_string,sp_string):
     # ---------------------------------------------------------
     found_si_string = False
     found_sp_string = False
+    if len(source[0]) != len(source[1]):
+        raise ValueError("source energies and probabilities not same length!")
 
     if '/' in mcnp_file_name:
         filesplit = mcnp_file_name.split('/')
@@ -95,13 +97,25 @@ def modify_sdef(source,mcnp_file_name,si_string,sp_string):
             if si_string in line:
                 found_si_string = True
                 f.write(si_string+' A')
-                for info in source[0]:
-                    f.write('      {:1.4e}\n'.format(info))
+                for i,info in enumerate(source[0]):
+                    if i==0:
+                        f.write('      ')
+                    f.write('{:1.5e} '.format(info))
+                    if i%6==0 and i!=0:
+                        f.write('\n      ')
+                    if i==len(source[0])-1:
+                        f.write('\n')
             elif sp_string in line:
                 found_sp_string = True
                 f.write(sp_string)
-                for frequency in frequencies:
-                    f.write('      {:1.4e}\n'.format(frequency))
+                for i,frequency in enumerate(frequencies):
+                    if i==0:
+                        f.write('      ')
+                    f.write('{:1.5e} '.format(frequency))
+                    if i%6==0 and i!=0:
+                        f.write('\n      ')
+                    if i==len(source[0])-1:
+                        f.write('\n')
             else:
                 f.write(line)
 

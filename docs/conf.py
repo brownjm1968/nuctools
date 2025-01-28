@@ -56,7 +56,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'nuctools'
-copyright = '2021, Jesse Brown'
+copyright = '2025, Jesse Brown'
 author = 'Jesse Brown'
 
 # The version info for the project you're documenting, acts as replacement for

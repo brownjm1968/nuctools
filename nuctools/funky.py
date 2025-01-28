@@ -8,7 +8,7 @@ RUNALL = False
 
 __all__ = ["c_edge","threshFinder",
            "decayFinder","six","four","two","sint",'ten','ten_exp',
-           "noisy_gauss","egrp_avg","giveIt"]
+           "gauss","noisy_gauss","egrp_avg","giveIt"]
 
 mnc2 = 939565413.3  # NIST neutron mass [eV]
 c = 299.792458      # NIST speed of light [m/us]
@@ -120,6 +120,48 @@ def ten_exp(x):
     return "{:9.3e}".format(x) # (10 digits total, 4 digits after dec.)
 #------------------------------------------------------------------------------
 
+def gauss(x,mu,sig):
+    """
+    Generate a Gaussian distribution
+
+    Gaussian is generated with user input average and 
+    standard deviation
+
+    Parameters
+    ----------
+    x : numpy array 
+        Vector of absiccae to plot the gaussian along
+    mu : float
+        The average value of the gauss, where the peak
+        will occur.
+    sig : float
+        The standard deviation from the average, varying
+        the width of the "bell" curve.
+    
+    Returns
+    -------
+    gauss : numpy array
+        The ordinates of same length x, which give the
+        Gaussian or normal distribution for the specified
+        parameters.
+    
+    Examples
+    --------
+    >>> x = np.linspace(0,100,100)
+    >>> mu,sig = 50,10
+    >>> gauss1 = gauss(x,mu,sig)
+    >>> plt.figure(3)
+    >>> plt.plot(x,gauss1,color="k",ls=" ",marker=".")
+    >>> plt.show()
+
+    """
+    # gauss curve
+    gauss = 1/(2*np.pi*sig**2)**0.5*np.exp(-(x-mu)**2/(2*sig**2))
+    
+    return gauss
+
+#------------------------------------------------------------------------------
+
 def noisy_gauss(x,mu,sig):
     """
     Generate a Gaussian distribution with noise.
@@ -157,10 +199,10 @@ def noisy_gauss(x,mu,sig):
 
     """
     # gauss curve
-    gauss = (1/(2*np.pi*sig**2)**0.5*np.exp(-(x-mu)**2/(2*sig**2))
-             +np.random.rand(len(x))*0.01)
+    ngauss = gauss(x,mu,sig)+np.random.rand(len(x))*0.01
     
-    return gauss
+    return ngauss
+
 #------------------------------------------------------------------------------
 def egrp_avg(E,Eg,data,err_data):
     """

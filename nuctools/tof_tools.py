@@ -315,7 +315,7 @@ def comp_group(data,factor,c_pts,FP,avg=False,binedge=False,verbose=False):
     >>> counts *= 1000
     >>> ercounts = np.sqrt(counts)
     >>> FP = 45.25
-    >>> factor,c_pts = np.array([2,4,8]),np.array([100,10])
+    >>> factor,c_pts = np.array([2,4,8]),np.array([10,100])
     >>> data = [tof,counts,ercounts]
     >>> gdata = nuc.comp_group(data,factor,c_pts,FP)
     >>> plt.figure(1)
