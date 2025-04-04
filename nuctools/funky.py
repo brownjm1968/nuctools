@@ -2,13 +2,14 @@ import pandas as pd
 import numpy as np
 import scipy.integrate as intgr
 import time
+from . import physics_tools as pt
 
 # run all functions?
 RUNALL = False
 
 __all__ = ["c_edge","threshFinder",
            "decayFinder","six","four","two","sint",'ten','ten_exp',
-           "gauss","noisy_gauss","egrp_avg","giveIt"]
+           "gauss","noisy_gauss","egrp_avg","giveIt","areal_density"]
 
 mnc2 = 939565413.3  # NIST neutron mass [eV]
 c = 299.792458      # NIST speed of light [m/us]
@@ -329,6 +330,49 @@ def frohner_cor_3rd_order(sig1,sig2,sig3,n1,n2,n3):
     denom = (n1-n2)*(n3**2-n1**2) - (n1-n3)*(n2**2-n1**2)
     
     return (numer1-numer2)/denom
+
+def areal_density(diam,unc_diam,mass,unc_mass,molar_mass):
+    """
+    Calculate areal density [at/b] of a sample based on sample
+    diameter, mass, and molar mass. Assumes a disc-shaped sample.
+
+    Does not consider isotopic abundances or multiple elements
+
+    Parameters
+    ----------
+    diam : float
+        The diameter of the sample [cm]
+    unc_diam : float
+        The uncertianty in the sample diameter [cm]
+    mass : float
+        The mass of the sample [g]
+    unc_mass : float
+        The uncertainty in the mass measurement of the sample [g]
+    molar_mass : float
+        The molar mass for the element/isotope
+
+    Returns
+    -------
+    atoms_per_barn : float
+        The sample thickness/areal-density [at/b]
+    dapb : float
+        The uncertainty in areal-density [at/b]
+    """
+    cm2pb = 1e-24 # [cm^2/b]
+
+    area = (diam/2)**2*np.pi
+    dadd = diam/2*np.pi       # partial deriv. w.r.t. diam
+    darea = np.sqrt( ( unc_diam*dadd )**2 )
+
+    avo = pt.Na # avogadros number
+
+    atoms_per_barn = avo/molar_mass*mass/area*cm2pb # [at/mol][mol/g][g][1/cm^2][cm^2/b] = at/b
+    dapbdarea = -avo/molar_mass*mass*cm2pb/area**2
+    dapbdmass = avo/molar_mass/area*cm2pb
+    dapb = np.sqrt( ( darea*dapbdarea )**2 + ( unc_mass*dapbdmass )**2 )
+
+    return atoms_per_barn,dapb 
+
 
 #############################################################
 

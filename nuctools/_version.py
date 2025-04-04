@@ -1,1 +1,2 @@
-__version__ = '1.4.3'
+__version__ = '1.4.4'
+# wish this was sync'd....

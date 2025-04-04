@@ -18,6 +18,8 @@ with file name matching `test_*.py`.
 
 ### To manually upload to PyPI
 
+(note that tag and push to GitHub automatically updates PyPI!)
+
 Currently running in the main `nuctools` dir:
 ```
 python -m pip install --upgrade build  
