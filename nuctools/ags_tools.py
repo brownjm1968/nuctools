@@ -1,8 +1,9 @@
 import numpy as np
 import pandas as pd
 from . import tof_tools as tt
+from . import physics_tools as pt
 
-__all__ = ['ags','e1p0','e2p0','e3p0']
+__all__ = ['ags','e1p0','e2p0','e3p0','rebin_tof_shift','rebin_tof_shift_slow']
 
 class ags:
     """
@@ -215,7 +216,188 @@ def dtco(dtof,counts,dead_time,trigs):
     corr_counts = trigs * ( -np.log( 1-(counts/trigs)/(1-SUM) ) )
 
 
+def rebin_tof_shift_slow(spectrum,newtof,fp1,fp2,gf1,gf2):
+    """
+    Rebin counts from `spectrum` into the `new_tof` grid
+    based on differences in flight paths 1 and 2 and gflash
+    locations 1 and 2. Based on "old" AGS shift function. 
 
+    Parameters
+    ----------
+    spectrum : Pandas DataFrame
+        Must have columns of: "tof","counts","dcounts"
+    newtof : array
+        1 dim array of tof, ascending order, units [us]
+    fp1 : float
+        Original position, units [m]
+    fp2 : float
+        New position, units [m]
+    gf1 : float
+        Original gamma flash location, units [us]
+    gf2 : float
+        New gamma flash location, units [us]
+
+    Returns
+    -------
+    new_spect : Pandas DataFrame
+        DataFrame with 3 columns: tof, counts, error counts in new binning
+    """
+
+    c = pt.c # [m/us]
+
+    orig_binwidth = spectrum.tof.diff().shift(-1)
+    ls = len(spectrum)
+    newspec = pd.DataFrame()
+    newspec['counts'] = np.zeros(ls)
+    newspec['dcounts'] = np.zeros(ls)
+    newspec['tof'] = newtof
+    newspec['binwidth'] = newspec.tof.diff().shift(-1)
+
+    new_chan = 0
+    lim_chan = 0
+    orig_chan = 0
+    last_bin = ls
+    while orig_chan < last_bin:
+
+        oll = spectrum.tof[orig_chan]        # original tof lower limit
+        oul = oll + orig_binwidth[orig_chan] # original tof upper limit
+        nll = newspec.tof[lim_chan]
+        nul = nll + newspec.binwidth[lim_chan]
+        oc = spectrum.loc[orig_chan,'counts']
+        doc = spectrum.loc[orig_chan,'dcounts']
+
+        # transform orig limits and width to new FP
+        delta_ll = (oll-gf1+fp1/c)*fp2/fp1 - (oll-gf2+fp2/c)
+        delta_ul = (oul-gf1+fp1/c)*fp2/fp1 - (oul-gf2+fp2/c)
+        orig_width = oul+delta_ul - (oll+delta_ll) 
+
+        new_chan = lim_chan
+        while lim_chan < last_bin:
+            nll = newspec.loc[lim_chan,'tof']
+            nul = nll + newspec.loc[lim_chan,'binwidth']
+            lim_chan += 1
+            if oll+delta_ll >= nul:
+                new_chan += 1
+            else:
+                break
+
+        if (new_chan==0) and (oll+delta_ll < nll) and (oul+delta_ul > nll):
+            weight = (oul+delta_ul - nll)/orig_width
+            newspec.loc[new_chan,'counts']  += oc*weight
+            newspec.loc[new_chan,'dcounts'] += doc*weight
+
+        # -------- old bin straddles left side of new bin
+        if (oll+delta_ll > nll):
+            # -------- all of old bin within new bin 
+            if(oul+delta_ul <= nul):
+                weight = 1
+                newspec.loc[new_chan,'counts']  += oc*weight
+                newspec.loc[new_chan,'dcounts'] += doc*weight
+            # -------- old bin straddles right side of new bin
+            else:
+                weight = (nul-(oll+delta_ll))/orig_width
+                newspec.loc[new_chan,'counts']  += oc*weight
+                newspec.loc[new_chan,'dcounts'] += doc*weight
+                # -------- keep incrementing new channels until old upper limit above new upper limit
+                while lim_chan < last_bin:
+                    nll = newspec.tof[lim_chan]
+                    nul = nll + newspec.binwidth[lim_chan]
+                    lim_chan += 1
+                    if (new_chan >= last_bin) or (oul+delta_ul <= nul):
+                        break
+                    new_chan += 1
+                    new_width = nul-nll
+                    weight = new_width/orig_width
+                    newspec.loc[new_chan,'counts']  += oc*weight
+                    newspec.loc[new_chan,'dcounts'] += doc*weight
+                # -------- after all that we landed straddling lower limit of the new bin
+                if (new_chan < last_bin-1) and ((oul+delta_ul) > nll):
+                    new_chan += 1
+                    weight = (oul+delta_ul-nll)/orig_width
+                    newspec.loc[new_chan,'counts']  += oc*weight
+                    newspec.loc[new_chan,'dcounts'] += doc*weight
+                    
+        orig_chan += 1
+        lim_chan = new_chan - 1
+        if lim_chan < 0: 
+            lim_chan = 0
+
+    return newspec
+
+
+def rebin_tof_shift(spectrum, newtof, fp1, fp2, gf1, gf2):
+    """
+    Rebin counts from `spectrum` into the `new_tof` grid
+    based on differences in flight paths 1 and 2 and gflash
+    locations 1 and 2. Based on "old" AGS shift function. 
+
+    Parameters
+    ----------
+    spectrum : Pandas DataFrame
+        Must have columns of: "tof","counts","dcounts"
+    newtof : array
+        1 dim array of tof, ascending order, units [us]
+    fp1 : float
+        Original position, units [m]
+    fp2 : float
+        New position, units [m]
+    gf1 : float
+        Original gamma flash location, units [us]
+    gf2 : float
+        New gamma flash location, units [us]
+
+    Returns
+    -------
+    new_spect : Pandas DataFrame
+        DataFrame with 3 columns: tof, counts, error counts in new binning
+    """
+
+    c = pt.c # [m/us]
+
+    # Original TOF edges
+    orig_tof = spectrum['tof'].values
+    orig_counts = spectrum['counts'].values
+    orig_dcounts = spectrum['dcounts'].values
+    orig_binwidth = np.diff(orig_tof, append=orig_tof[-1])  # handle last bin gracefully
+    oul = orig_tof + orig_binwidth  # upper limits
+
+    # New TOF edges
+    newtof = np.asarray(newtof)
+    new_binwidth = np.diff(newtof, append=newtof[-1])
+    new_upper = newtof + new_binwidth
+
+    # Initialize new spectrum arrays
+    counts_out = np.zeros_like(newtof)
+    dcounts_out = np.zeros_like(newtof)
+
+    # Shifted TOF bounds
+    delta_ll = (orig_tof - gf1 + fp1/c) * fp2/fp1 - (orig_tof - gf2 + fp2/c)
+    delta_ul = (oul - gf1 + fp1/c) * fp2/fp1 - (oul - gf2 + fp2/c)
+    shifted_ll = orig_tof + delta_ll
+    shifted_ul = oul + delta_ul
+    orig_width = shifted_ul - shifted_ll
+
+    # Loop through each original bin and distribute into new bins
+    for i in range(len(orig_tof)):
+        sl = shifted_ll[i]
+        su = shifted_ul[i]
+        w = orig_width[i]
+        if w <= 0:
+            continue  # skip bad bins
+
+        overlaps = (newtof < su) & (new_upper > sl)
+        for j in np.where(overlaps)[0]:
+            overlap_start = max(sl, newtof[j])
+            overlap_end = min(su, new_upper[j])
+            frac = (overlap_end - overlap_start) / w
+            counts_out[j] += frac * orig_counts[i]
+            dcounts_out[j] += frac * orig_dcounts[i]
+
+    return pd.DataFrame({
+        'tof': newtof,
+        'counts': counts_out,
+        'dcounts': dcounts_out,
+    })
 
 
 
