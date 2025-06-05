@@ -7,6 +7,7 @@ from . import funky
 import time
 
 __all__ = ['read_h5rpcm','read_h5xscm','read_pds','write_sammy_idc_file',
+           'read_sammy_idc_file',
            'print_chann','create_sam_inp','fmt_twenty','fmt_ten','fmt_par',
            'switch_par_flags','describe_norsum_header','LPTtoCOV','mini_cov']
 
@@ -238,6 +239,73 @@ def write_sammy_idc_file(filename_abbrev,energy,obs,obserr,stat,syst,sys_der_lis
                         f.write(' ')
                 f.write('\n')
         f.write('\n')
+
+def read_sammy_idc_file(file,full_cov=True):
+    """
+    Read the SAMMY implicit data covariance file and return the full 
+    covariance
+
+    Parameters
+    ----------
+    file : str
+        The path for the SAMMY IDC file
+    full_cov : bool, optional
+        Option to return the full covariance matrix or not. Default is true
+    
+    Returns
+    -------
+    C : array-like
+        A 2-d array of full covariance for SAMMY observable. Default return variable
+    corr,edep : tuple
+        A tuple with two, 2-d arrays with correlation matrix in IDC file and all the energy-dependent data
+    """
+    # ----------------------------
+    # figure out row numbers
+    # ----------------------------
+    with open(file,'r') as f:
+        lines = f.readlines()
+    i = 1
+    lp = 0
+    for line in lines: 
+        if 'Number of data-red' in line:
+            linesplit = line.split()
+            lp = int(linesplit[len(linesplit)-1])
+        if 'Free-format' in line:
+            deriv_skip = i
+        if 'uncertainties on data-reduction' in line:
+            err_skip = i
+            corr_skip = i+3
+        i+=1
+    # ----------------------------
+    # Read the data
+    # ----------------------------
+    edep = np.genfromtxt(file,skip_header=deriv_skip,max_rows=err_skip-deriv_skip-2)
+    stddev = np.genfromtxt(file,skip_header=err_skip,max_rows=1)
+    corr_lt = np.zeros((lp,lp))
+    np.fill_diagonal(corr_lt,1)
+    with open(file) as f:
+        for _ in range(corr_skip):
+            next(f) # skip first 4 rows
+        for i,line in enumerate(f):
+            num_list = np.array(line.split()).astype(float)
+            if len(num_list)<1:
+                break
+            # start on row 2 below diagonal
+            for j in range(len(num_list)):
+                corr_lt[i+1,j] = num_list[j]
+    corr = corr_lt + corr_lt.T - np.diag(np.diag(corr_lt)) # correlation matrix: data-reduction
+
+    if full_cov==False:
+        # return the corr matrix and derivatives and quit function
+        return corr,edep 
+    # if full cov wanted continue
+    cy = corr * np.outer(stddev,stddev)                    # covariance matrix: data-reduction
+    fy = edep[:,2:]                                        # sensitivities for data-redux parameters   
+    c_syst = fy@cy@fy.T                                    # covariance for systematic
+    c_stat = np.diag(edep[:,1]**2)                           # covariance for statistical
+    C = c_syst + c_stat                                    # total covariance
+    return C
+
 
 def print_chann(cpts,factor,base_width,t0,FP,uncertainty="0.8"):
     """
