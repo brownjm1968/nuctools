@@ -139,7 +139,8 @@ def read_pds(pds_file):
     df = pd.DataFrame(deriv_table,columns=pandas_cols)
     return df
 
-def write_sammy_idc_file(filename_abbrev,energy,obs,obserr,stat,syst,sys_der_list,high_precision=False):
+def write_sammy_idc_file(filename_abbrev,energy,obs,obserr,stat,syst,sys_der_list,
+                         high_precision=False,smooth_derivs=None):
     """
     Write a file with the information requested by the SAMMY code for calculating covariance.
     This function will also write the "data file" needed by SAMMY
@@ -172,6 +173,10 @@ def write_sammy_idc_file(filename_abbrev,energy,obs,obserr,stat,syst,sys_der_lis
     high_precision : bool, optional
         If the precision written to the file is too low (default 1e-6), write
         the floats with higher precision (1e-12).
+    smooth_derivs : int, optional
+        Whether to apply a Savitsky-Golay smoothing to the derivative calculations,
+        default value is None, user-supplied integer determines number of points in 
+        smoothing window
 
     Returns
     -------
@@ -179,7 +184,6 @@ def write_sammy_idc_file(filename_abbrev,energy,obs,obserr,stat,syst,sys_der_lis
         Returns a somewhat annotated file with all the information necessary to
         reproduce the point-by-point covariance of the function, in the format
         SAMMY expects.
-
 
     """
     def sixe(x):
@@ -193,6 +197,11 @@ def write_sammy_idc_file(filename_abbrev,energy,obs,obserr,stat,syst,sys_der_lis
     stat = np.array(stat)
     syst = np.array(syst)
     sys_der_list = np.array(sys_der_list)
+
+    # smoothing
+    if smooth_derivs is not None:
+        for i,sys_der in enumerate(sys_der_list):
+            sys_der_list[i] = tt.sgfilter(sys_der,sys_der,smooth_derivs,2)[0]
     
     # --- Data file ---
     fmt_twenty([energy,obs,obserr],filename_abbrev+'.twenty')
@@ -302,7 +311,7 @@ def read_sammy_idc_file(file,full_cov=True):
     cy = corr * np.outer(stddev,stddev)                    # covariance matrix: data-reduction
     fy = edep[:,2:]                                        # sensitivities for data-redux parameters   
     c_syst = fy@cy@fy.T                                    # covariance for systematic
-    c_stat = np.diag(edep[:,1]**2)                           # covariance for statistical
+    c_stat = np.diag(edep[:,1]**2)                         # covariance for statistical
     C = c_syst + c_stat                                    # total covariance
     return C
 
