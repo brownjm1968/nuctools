@@ -261,6 +261,7 @@ def sum_tof(agl_inp_file,file_list):
     cfct = agldict['cfct']
     zones = agldict['zones']
     rundict = agldict['rundict']
+    gain = None
 
 
     print("Total number of files: ",len(file_list))
