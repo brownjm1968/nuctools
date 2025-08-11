@@ -1,6 +1,9 @@
 
 import numpy as np
+from decimal import Decimal 
 import pandas as pd
+import re
+
 
 __all__ = ["TAB1",'read_pendf_xs','write_pendf_xs',"write_endf_float","read_endf_float",
            "update_file2","setupdict","update_pardict","strip_line_num",
@@ -305,13 +308,59 @@ def write_endf_float(value):
     valstring : str
         An ENDF format string of input par `value`
     """
-    if(abs(value) < 1e-9 or abs(value) > 9.999e9):
-        raise ValueError("value is too small or too big")
-    valstring = "{:>13.6e}".format(value).replace('e','').replace('+0','+').replace('-0','-')
+    isneg = False
+    if value<0:
+        isneg = True
+    value = float(value)     # no integers
+    if (abs(value) > 9.999e9):
+        raise ValueError("value is too big")
+    if abs(value) == 0.0:
+        valstring = ' 0.000000-0'
+    elif (abs(value) < 1e-99):
+        valstring = "{:>12.4e}".format(value).replace('e','').replace('+0','+').replace('-0','-')
+    elif (abs(value) < 1e-9):
+        valstring = "{:>12.5e}".format(value).replace('e','').replace('+0','+').replace('-0','-')
+    elif (abs(value) <= 1e-5):
+        valstring = "{:>13.6e}".format(value).replace('e','').replace('+0','+').replace('-0','-')
+    elif (abs(value) < 99999999.9):
+        sign=' '
+        if isneg:
+            sign='-'
+            value *=-1
+        if 'e' in str(value):    # no exp format
+            value = Decimal(value) # careful with Decimal objects! (extra spaces)
+        strvallist = str(value).split('.')
+        lead = len(strvallist[0])
+        sigfig = 10-lead-1
+        valstring = f"{sign}{value:>10.{sigfig}f}".rstrip("0")
+        if valstring.endswith('.'):
+            valstring += '0'
+        valstring = valstring.rjust(11)
+        # need to see if we lose precision with exponential (looks cleaner)
+        if isneg:
+            value *= -1
+        valstringexp = "{:>13.6e}".format(float(value)).replace('e','').replace('+0','+').replace('-0','-')
+        len_exp = count_significant_digits(valstringexp)
+        len_dec = count_significant_digits(valstring)
+        if len_exp >= len_dec:
+            valstring = valstringexp
+        valstring = valstring.rjust(11)
+    else:
+        valstring = "{:>13.6e}".format(value).replace('e','').replace('+0','+').replace('-0','-')
     # with AMPX written files we use "-0" instead of "+0" for some reason
     if( '+0' in valstring ):
         valstring = valstring.replace('+0','-0')
+    if len(valstring) > 11:
+        raise ValueError(f"ENDF string too long: \"{valstring}\" from input value {value}")
     return valstring
+def count_significant_digits(s):
+    """
+    Count significant digits in a number string in ENDF format.
+    """
+    valstring = str(s)
+    valstring = re.sub(r'[+-]\d{1,2}$', '', valstring)
+    valstring = valstring.strip('.0').replace('-','').replace('+','').replace('.','').strip().strip('0')
+    return len(valstring)
 
 def read_endf_float(string):
     """
@@ -378,7 +427,7 @@ def update_file2(infile,outfile,energy_dict,mat):
                                 channel_value = channel_pair[1]
                                 start = 11*channel_number
                                 end = 11+start
-                                linelist[start:end] = endf_float_str(channel_value)
+                                linelist[start:end] = write_endf_float(channel_value)
                             line = "".join(linelist)
                 of.write(line)
 
@@ -418,7 +467,7 @@ def setupdict(parfile):
                 # if any varied pars
                 if( any(flags) > 0 ):
                     # energies are dict keys
-                    estring = endf_float_str(float(line[0:11]))
+                    estring = write_endf_float(float(line[0:11]))
                     pardict[estring] = []
                     pars = [float(line[0+11*i:11+11*i]) for i in range(len(flags))]
                     for i,flag in enumerate(flags):

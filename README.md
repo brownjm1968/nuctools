@@ -19,8 +19,9 @@ Module `sam_tools.py` has been made to assist in reading and writing files that
 are used in the i/o for the code SAMMY. The package `nuctools` also contains 
 functions to assist in plotting with different styles commonly used at RPI.
 
-Module `endf_tools.py` provides functions to read and write ENDF/B-VI format 
-pointwise cross section data.
+Module `endf_tools.py` provides functions to read and write 
+![ENDF-6 format](https://www.nndc.bnl.gov/endfdocs/ENDF-102-2023.pdf) pointwise cross 
+section data.
 
 --------------
 ## To Install
