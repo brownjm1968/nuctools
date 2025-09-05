@@ -9,7 +9,8 @@ def get_protons(chem_symbol):
     f_protons = os.path.join(os.path.dirname(__file__),'data','protons.json')
     with open(f_protons,'r') as f:
         protons = json.load(f)
-    
+    chem_symbol = chem_symbol.capitalize()
+
     return protons[chem_symbol]
 
 def get_elem_symbol(z):
@@ -19,6 +20,7 @@ def get_elem_symbol(z):
     f_protons = os.path.join(os.path.dirname(__file__),'data','protons.json')
     with open(f_protons,'r') as f:
         protons = json.load(f)
+    z = str(z)
 
     return protons[z]
 
