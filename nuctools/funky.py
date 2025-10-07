@@ -331,7 +331,7 @@ def frohner_cor_3rd_order(sig1,sig2,sig3,n1,n2,n3):
     
     return (numer1-numer2)/denom
 
-def areal_density(diam,unc_diam,mass,unc_mass,molar_mass):
+def areal_density(dim,unc_dim,mass,unc_mass,molar_mass,rectangle=False):
     """
     Calculate areal density [at/b] of a sample based on sample
     diameter, mass, and molar mass. Assumes a disc-shaped sample.
@@ -340,10 +340,12 @@ def areal_density(diam,unc_diam,mass,unc_mass,molar_mass):
 
     Parameters
     ----------
-    diam : float
-        The diameter of the sample [cm]
-    unc_diam : float
-        The uncertianty in the sample diameter [cm]
+    dim : float
+        The diameter of the sample [cm] (default), if rectangle is 
+        True, variable dim = area
+    unc_dim : float
+        The uncertianty in the sample diameter [cm] (default), if
+        rectangle is True, variable unc_dim is uncertainty in area
     mass : float
         The mass of the sample [g]
     unc_mass : float
@@ -360,9 +362,13 @@ def areal_density(diam,unc_diam,mass,unc_mass,molar_mass):
     """
     cm2pb = 1e-24 # [cm^2/b]
 
-    area = (diam/2)**2*np.pi
-    dadd = diam/2*np.pi       # partial deriv. w.r.t. diam
-    darea = np.sqrt( ( unc_diam*dadd )**2 )
+    if not rectangle:
+        area = (dim/2)**2*np.pi
+        dadd = dim/2*np.pi       # partial deriv. w.r.t. diam
+        darea = np.sqrt( ( unc_dim*dadd )**2 )
+    else:
+        area = dim
+        darea = unc_dim
 
     avo = pt.Na # avogadros number
 

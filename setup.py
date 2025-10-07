@@ -21,7 +21,7 @@ setup(
     long_description_content_type="text/markdown",
     long_description=long_description,
     install_requires=['numpy','pandas','scipy','h5py','pyyaml',
-                      'matplotlib','pytest'],
+                      'matplotlib','pytest','tifffile'],
     classifiers=[
         "Programming Language :: Python :: 3",
         "Operating System :: Unix",
