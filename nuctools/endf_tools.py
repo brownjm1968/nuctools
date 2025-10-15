@@ -7,7 +7,7 @@ import re
 
 __all__ = ["TAB1",'read_pendf_xs','write_pendf_xs',"write_endf_float","read_endf_float",
            "update_file2","setupdict","update_pardict","strip_line_num",
-           "loglog_interp"]
+           "loglog_interp","get_recoverable_energy"]
 
 class TAB1:
     """
@@ -87,12 +87,7 @@ class TAB1:
                 continue
             # read control record
             if i==start and i!=0:
-                self.c1 = read_endf_float(line[0:11])
-                self.c2 = read_endf_float(line[11:22])
-                self.l1 = read_endf_float(line[22:33])
-                self.l2 = read_endf_float(line[33:44])
-                self.nr = read_endf_float(line[44:55])
-                self.np = read_endf_float(line[55:66])
+                self.c1, self.c2, self.l1, self.l2, self.nr, self.np  = read6(line)
                 numlines_nr = int(self.nr//3)
                 if self.nr%3 > 0: 
                     numlines_nr +=1
@@ -112,6 +107,27 @@ class TAB1:
         self.starting_line_no = start+3
         self.ending_line_no = start+2+numlines_np
 
+def read6(line):
+    """
+    Read 6 11 character floats in fixed format line for ENDF
+
+    Parameters
+    ----------
+    line : str
+        The full line from a file
+
+    Returns
+    -------
+    c1,c2,l1,l2,n1,n2 : tuple
+        The six numbers in the line to be read (excluding mat,mf,mt)
+    """
+    c1 = read_endf_float(line[0:11])
+    c2 = read_endf_float(line[11:22])
+    l1 = read_endf_float(line[22:33])
+    l2 = read_endf_float(line[33:44])
+    n1 = read_endf_float(line[44:55])
+    n2 = read_endf_float(line[55:66])
+    return c1,c2,l1,l2,n1,n2
 
 def read_pendf_xs(file,start,finish):
     """
@@ -571,6 +587,65 @@ def loglog_interp(x,xp,fp):
     lxp = np.log(xp)
     lfp = np.log(fp)
     return np.exp(np.interp(lx,lxp,lfp))
+
+def get_recoverable_energy(filename):
+    """
+    Read an ENDF decay file for File 8, MT=457 to find 
+    recoverable energy of decay (excluding neutrino)
+
+    Parameters
+    ----------
+    filename : str
+        The full path to the file 
+
+    Returns
+    -------
+    E,dE : tuple
+        The recoverable energy and the propagated error
+        from the sum of the 
+    """
+    with open(filename,'r') as f:
+        lines = f.readlines()
+
+    i=0
+    za,awr,dec_time,ddec_time = 0,0,0,0
+    exlist = []
+    for line in lines:
+        mf = line[70:72]
+        mt = line[72:75]
+        if(mf==" 1" and mt=="451"): 
+            continue
+        if(mf==" 8" and mt=="457"):
+            #start reading
+            if( i==0 ):
+                # nsp = num rad. types
+                # nst = radioactive
+                # lis = excited state orig. nuc. (ground=0)
+                # liso = isomer of orig. nuc.
+                za, awr, lis, liso, nst, nsp = read6(line)
+                if(nst!=0):
+                    # not radioactive, i'm confused
+                    print("Stable! Not even gonna look for the values!")
+                    return 0,0
+            if( i==1 ):
+                # nc2 should either be 6 or 34 to indicate 3 or 17 values with unc.
+                dec_time,ddec_time,zero,zero,nc2,zero = read6(line)
+                nc = nc2/2
+            if( i>1 and i<=1+nc/3):
+                ex1,dex1,ex2,dex2,ex3,dex3 = read6(line)
+                exlist.extend([ex1,dex1,ex2,dex2,ex3,dex3])
+
+            i+=1
+    # print(f"T1/2 = {dec_time/(3600*24*365):.2f}+/-{ddec_time/(3600*24*365):.2f}")
+    # print(f"Recoverable energy: \n-------\nE_LP = {exlist[0]} +/- {exlist[1]}")
+    # print(f"E_EM = {exlist[2]} +/- {exlist[3]}")
+    # print(f"E_HP = {exlist[4]} +/- {exlist[5]}")
+    # print(f"E_tot = {exlist[0]+exlist[2]+exlist[4]}")
+    # return exlist[0]+exlist[2]+exlist[4], np.sqrt(exlist[1]**2+exlist[3]**2+exlist[5]**2)
+    exlist = np.array(exlist)
+    E = np.sum(exlist[::2])
+    dE = np.sqrt(np.sum(exlist[1::2]**2))
+    return E,dE 
 
 
 
