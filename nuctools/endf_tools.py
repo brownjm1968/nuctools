@@ -610,6 +610,7 @@ def get_recoverable_energy(filename,get_halflife=False):
 
     i=0
     za,awr,dec_time,ddec_time = 0,0,0,0
+    nst = -1
     exlist = []
     for line in lines:
         mf = line[70:72]
@@ -624,10 +625,6 @@ def get_recoverable_energy(filename,get_halflife=False):
                 # lis = excited state orig. nuc. (ground=0)
                 # liso = isomer of orig. nuc.
                 za, awr, lis, liso, nst, nsp = read6(line)
-                if(nst!=0):
-                    # not radioactive, i'm confused
-                    print("Stable! Not even gonna look for the values!")
-                    return 0,0
             if( i==1 ):
                 # nc2 should either be 6 or 34 to indicate 3 or 17 values with unc.
                 dec_time,ddec_time,zero,zero,nc2,zero = read6(line)
@@ -647,8 +644,12 @@ def get_recoverable_energy(filename,get_halflife=False):
     E = np.sum(exlist[::2])
     dE = np.sqrt(np.sum(exlist[1::2]**2))
     if get_halflife:
+        if nst!=0:
+            return 0,0,dec_time,ddec_time
         return E,dE,dec_time,ddec_time
     else:
+        if nst!=0:
+            return 0,0
         return E,dE 
 
 
