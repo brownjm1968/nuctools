@@ -588,7 +588,7 @@ def loglog_interp(x,xp,fp):
     lfp = np.log(fp)
     return np.exp(np.interp(lx,lxp,lfp))
 
-def get_recoverable_energy(filename):
+def get_recoverable_energy(filename,get_halflife=False):
     """
     Read an ENDF decay file for File 8, MT=457 to find 
     recoverable energy of decay (excluding neutrino)
@@ -602,7 +602,8 @@ def get_recoverable_energy(filename):
     -------
     E,dE : tuple
         The recoverable energy and the propagated error
-        from the sum of the 
+        from the sum of the error provided. If `get_halflife`
+        is True, tuple is E,dE,dec_time,ddec_time
     """
     with open(filename,'r') as f:
         lines = f.readlines()
@@ -645,7 +646,10 @@ def get_recoverable_energy(filename):
     exlist = np.array(exlist)
     E = np.sum(exlist[::2])
     dE = np.sqrt(np.sum(exlist[1::2]**2))
-    return E,dE 
+    if get_halflife:
+        return E,dE,dec_time,ddec_time
+    else:
+        return E,dE 
 
 
 
