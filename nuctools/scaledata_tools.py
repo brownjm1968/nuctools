@@ -71,9 +71,9 @@ def plot_h5scale_xs(filename,scaleid,temp,emin=2.1e7,mt=None):
         plt.yscale('log')
         plt.legend(ncol=3)
 
-def get_cross_section(filename,scaleid,temp,mt):
+def get_scale_nuclide(filename,scaleid,temp):
     """
-    Plot xs of every MT (reaction number) in SCALE data H5 format
+    Get xs of all MTs (reaction numbers) in SCALE data H5 format for a temperature
 
     Parameters
     ----------
@@ -84,9 +84,54 @@ def get_cross_section(filename,scaleid,temp,mt):
         for hydrogen, 5008016 for the oxygen in BeO 
     temp : float
         The temperature, assumed to only need one digit after the decimal
-    emin : float, optional
-        Minimum energy of XS must be below this value to be plotted. 
-    mt : int, optional
+
+    Returns
+    -------
+    data : dict
+        A dict of Pandas DataFrames with keys: "e" and "cs" for energy and cross section
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> 
+    >>> scaleid = 5008016
+    >>> temperature = 293.6
+    >>> data = nuc.get_scale_nuclide('n_008016.h5',temperature,scaleid)
+
+    """
+    allmts_dict = {}
+    with h5.File(filename,'r') as f:
+        try:
+            nuclide = f['n_{:0>7d}_{:0>6.1f}'.format(scaleid,temp)]
+        except:
+            df = pd.DataFrame(f['nuclide_md'][:])
+            print("Temperatures available for SCALEID = {}:".format(scaleid))
+            for temp in df[df['zaid']==scaleid]['temperature']:
+                print(temp)
+            raise ValueError("Temperature was not found.")
+        for key in nuclide:
+            if key == "reaction_md":
+                continue
+            allmts_dict[key] = {
+                "e"  : nuclide[f"{key}/energy"][()],
+                "xs" : nuclide[f"{key}/xs"][()] 
+            }
+    return allmts_dict
+
+def get_cross_section(filename,scaleid,temp,mt):
+    """
+    Get xs of a given MT (reaction number) in SCALE data H5 format
+
+    Parameters
+    ----------
+    filename : str
+        The path to the H5 library file
+    scaleid : int
+        The integer representing a single isotope or compound, e.g. 1001 
+        for hydrogen, 5008016 for the oxygen in BeO 
+    temp : float
+        The temperature, assumed to only need one digit after the decimal
+    mt : int
         The MT ENDF/SCALE reaction number to be plotted. Default is all within 
         energy limit defined
 
@@ -105,19 +150,28 @@ def get_cross_section(filename,scaleid,temp,mt):
 
     """
     with h5.File(filename,'r') as f:
+        # ---- Try to get the SCALEid and temperature
+        try: 
+            mat_temp = f['n_{:0>7d}_{:0>6.1f}/'.format(scaleid,temp)]
+        except:
+            df = pd.DataFrame(f['nuclide_md'][:])
+            print("Temperatures available for SCALEID = {}:".format(scaleid))
+            for temp in df[df['zaid']==scaleid]['temperature']:
+                print(temp)
+            raise ValueError("Temperature was not found.")
+        # ---- Try to get the MT for that scaleid and temp
         try:
             data = pd.DataFrame({
-                "e" : f['n_{:0>7d}_{:0>6.1f}/mt_{:0>4d}/energy'.format(scaleid,temp,mt)][()],
-                "cs" : f['n_{:0>7d}_{:0>6.1f}/mt_{:0>4d}/xs'.format(scaleid,temp,mt)][()]
+                "e" : mat_temp['mt_{:0>4d}/energy'.format(mt)][()],
+                "cs" : mat_temp['mt_{:0>4d}/xs'.format(mt)][()]
             })
         except:
             print("key = 'n_{:0>7d}_{:0>6.1f}/mt_{:0>4d}' cannot be found".format(scaleid,temp,mt))
-            df = pd.DataFrame(f['nuclide_md'][:])
-            print("Temperatures available for SCALEID = {}:".format(scaleid))
-            print(df[df['zaid']==scaleid]['temperature'])
-            raise ValueError("Temperature was not found.")
+            print("MTs available for SCALEID = {}:".format(scaleid))
+            for MT in mat_temp:
+                print(MT)
+            raise ValueError("MT was not found.")
     return data
-
 
 
 def get_std_comp(datadir):

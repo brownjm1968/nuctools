@@ -120,8 +120,6 @@ def e1p0(tof,p1,p2,p3):
         multiplier on 1st exponential
     p3 : float
         multiplier on time-of-flight in 1st exponent
-    p4 : float
-        constant added to 1st exponent
 
     Returns
     -------
@@ -130,7 +128,7 @@ def e1p0(tof,p1,p2,p3):
 
     Notes
     -----
-    .. math:: f(t) = p1 + p2e^{p3t+p4}
+    .. math:: f(t) = p1 + p2e^{p3t}
     """
     return p1 + p2*np.exp(p3*tof)
 
@@ -150,9 +148,7 @@ def e2p0(tof,p1,p2,p3,p5,p6):
         multiplier on 1st exponential
     p3 : float
         multiplier on time-of-flight in 1st exponent
-    p4 : float
-        constant added to 1st exponent
-    p5-p7 : float
+    p5-p6 : float
         (see equation in notes)
 
     Returns
@@ -162,7 +158,7 @@ def e2p0(tof,p1,p2,p3,p5,p6):
 
     Notes
     -----
-    .. math:: f(t) = p1 + p2e^{p3t+p4} + p5e^{p6t+p7}
+    .. math:: f(t) = p1 + p2e^{p3t} + p5e^{p6t}
     """
     return p1 + p2*np.exp(p3*tof) + p5*np.exp(p6*tof)
 
