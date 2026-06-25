@@ -13,7 +13,7 @@ from . import physics_tools as pt
 __all__ = ['plot_h5scale_xs',"get_cross_section","get_std_comp","get_std_comp_nat_abund","get_zlist",
            "get_zaidlist","calc_num_densities","write_tsl_table","get_scaleza_name_thermal",
            "get_scaleza_name_metastable","get_scaleza_name_specialNuclei","append_xml_to_table",
-           "get_xml_root","get_fastmat_thermal","get_single_mat"]
+           "get_xml_root","get_fastmat_thermal","get_single_mat","get_scale_nuclide"]
 
 def plot_h5scale_xs(filename,scaleid,temp,emin=2.1e7,mt=None):
     """
@@ -95,7 +95,7 @@ def get_scale_nuclide(filename,scaleid,temp):
     >>> import numpy as np
     >>> 
     >>> scaleid = 5008016
-    >>> temperature = 293.6
+    >>> temperature = 293.6g
     >>> data = nuc.get_scale_nuclide('n_008016.h5',temperature,scaleid)
 
     """
