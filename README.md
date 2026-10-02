@@ -35,7 +35,7 @@ python -m pip install nuctools
 
 <p>
 <details>
-<summary>If you'd rather install from the source found in GitHub</summary>: 
+<summary>If you'd rather install from the source found in GitHub:</summary>
 
 Note: not recommended! Set the version in `nuctools/_version.py`, open a terminal and type: 
 
