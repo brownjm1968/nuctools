@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nuctools"
+dynamic = ["version"]
+description = "nuclear data reduction tools"
+readme = {file = "README.md", content-type = "text/markdown"}
+license = {text = "BSD 3-clause"}
+authors = [
+    {name = "Jesse Brown", email = "brownjm1968@gmail.com"},
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: Unix",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: Microsoft :: Windows",
+]
+dependencies = [
+    "numpy",
+    "pandas",
+    "scipy",
+    "h5py",
+    "pyyaml",
+    "matplotlib",
+    "pytest",
+    "tifffile",
+]
+
+[project.urls]
+Homepage = "https://github.com/brownjm1968/nuctools"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.dynamic]
+version = {attr = "nuctools._version.__version__"}
+
+[tool.setuptools.packages.find]
+include = ["nuctools", "nuctools.*"]
+
+[tool.setuptools.package-data]
+nuctools = ["data/*", "*.mplstyle"]

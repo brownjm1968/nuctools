@@ -37,7 +37,7 @@ python -m pip install nuctools
 <details>
 <summary>If you'd rather install from the source found in GitHub</summary>: 
 
-Note: not recommended! Set version in `setup.py`, open a terminal and type: 
+Note: not recommended! Set the version in `nuctools/_version.py`, open a terminal and type: 
 
 ```console
 cd ~/
@@ -106,4 +106,3 @@ with "test".
 
 
 [^1]: Danon, Yaron. "Design and Construction of the RPI Enhanced Thermal Neutron Target and Thermal Cross Section Measurements of Rare Earth Isotopes.", Doctoral Thesis, RPI, (1993).
-

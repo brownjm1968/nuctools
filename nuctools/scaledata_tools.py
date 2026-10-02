@@ -3,7 +3,8 @@ import pandas as pd
 import numpy as np
 import xml.etree.ElementTree as ET
 import h5py as h5
-import os,sys,json
+import os,sys,json,shutil
+from pathlib import Path
 import matplotlib.pyplot as plt
 import pkgutil
 
@@ -13,7 +14,8 @@ from . import physics_tools as pt
 __all__ = ['plot_h5scale_xs',"get_cross_section","get_std_comp","get_std_comp_nat_abund","get_zlist",
            "get_zaidlist","calc_num_densities","write_tsl_table","get_scaleza_name_thermal",
            "get_scaleza_name_metastable","get_scaleza_name_specialNuclei","append_xml_to_table",
-           "get_xml_root","get_fastmat_thermal","get_single_mat","get_scale_nuclide"]
+           "get_xml_root","get_fastmat_thermal","get_single_mat","get_scale_nuclide",
+           "redefine_ce_path_links"]
 
 def plot_h5scale_xs(filename,scaleid,temp,emin=2.1e7,mt=None):
     """
@@ -722,6 +724,87 @@ def append_xml_to_table(table,prot_dict,root,configroot,elibrary,additional_lib=
             else:        
                 table.loc[len(table)] = [scaleid,name,gamprod,bondfac,gamxs,elibrary]
 
+
+def redefine_ce_path_links(master_path, old_prefix, new_prefix, *, reference_path=None):
+    """Rewrite root-level HDF5 external links without losing entries.
+
+    reference_path may point to an original/backup master. Any external
+    link present there but missing from master_path is restored before
+    validation. This also makes an interrupted earlier run recoverable.
+    """
+    master_path = Path(master_path)
+    backup_path = master_path.with_suffix(master_path.suffix + ".bak")
+
+    if reference_path is None:
+        if not backup_path.exists():
+            shutil.copy2(master_path, backup_path)
+            print(f"Backup created: {backup_path}")
+        reference_path = backup_path
+    else:
+        reference_path = Path(reference_path)
+
+    def external_links(h5_file):
+        links = {}
+        for name in list(h5_file.keys()):
+            link = h5_file.get(name, getlink=True)
+            if isinstance(link, h5.ExternalLink):
+                links[name] = (link.filename, link.path)
+        return links
+
+    def translated(link):
+        filename, target_path = link
+        if filename.startswith(old_prefix):
+            filename = new_prefix + filename[len(old_prefix):]
+        return filename, target_path
+
+    with h5.File(reference_path, "r") as reference:
+        reference_links = external_links(reference)
+
+    with h5.File(master_path, "r+") as f:
+        before_links = external_links(f)
+
+        # Recover links that were present in the original master but are
+        # missing now (for example, n_0001001_0273.1).
+        restored = []
+        for name in sorted(reference_links.keys() - before_links.keys()):
+            filename, target_path = translated(reference_links[name])
+            f[name] = h5.ExternalLink(filename, target_path)
+            restored.append(name)
+
+        current_links = external_links(f)
+        updates = {
+            name: translated(link)
+            for name, link in current_links.items()
+            if link[0].startswith(old_prefix)
+        }
+
+        # External-link filenames cannot be edited in place.
+        for name, (filename, target_path) in updates.items():
+            del f[name]
+            f[name] = h5.ExternalLink(filename, target_path)
+
+        f.flush()
+        after_links = external_links(f)
+
+        expected_links = {
+            name: translated(link)
+            for name, link in (before_links | reference_links).items()
+        }
+        missing = sorted(expected_links.keys() - after_links.keys())
+        incorrect = sorted(
+            name for name, link in expected_links.items()
+            if after_links.get(name) != link
+        )
+        if missing or incorrect:
+            raise RuntimeError(
+                f"External-link validation failed; "
+                f"missing={missing}, incorrect={incorrect}"
+            )
+
+    print(f"Updated {len(updates):,} external links.")
+    print(f"Restored {len(restored):,} missing external links.")
+    print(f"Validated {len(expected_links):,} external links.")
+    return {"updated": len(updates), "restored": restored}
 
 
 
